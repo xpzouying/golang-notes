@@ -10,3 +10,10 @@
 2. 若涉及示例代码，则保存在[docs](https://github.com/xpzouying/golang-notes/tree/master/docs)目录中。
 
 3. 讨论。所有的Issue暂时不会关闭，可以在相应的Issue下面进行讨论。
+
+
+## 如何互动
+
+- 不要使用`Fork`
+
+- 点击`Star`，保持`watch`
