@@ -1,5 +1,6 @@
 package main
 
+//go:noinline
 func sum(a, b int) int {
 	return a + b
 }
