@@ -83,3 +83,35 @@ func main() {
 
 使用`CALL runtime.newproc(SB)`创建goroutine。
 
+
+-----
+
+我的测试环境为Go1.5.4版本：
+
+```bash
+go version
+go version go1.5.4 linux/amd64
+```
+
+
+前面已经看到`go func()`最终会调用到[runtime.newproc函数](https://github.com/golang/go/blob/a1ef950a15517bca223d079a6cf65948c3db9694/src/runtime/proc1.go#L2209-L2222)。
+该函数的定义如下，
+
+```go
+func newproc(siz int32, fn *funcval) {
+	argp := add(unsafe.Pointer(&fn), ptrSize)
+	pc := getcallerpc(unsafe.Pointer(&siz))
+	systemstack(func() {
+		newproc1(fn, (*uint8)(argp), siz, 0, pc)
+	})
+}
+```
+
+该函数的处理逻辑主要在[runtime.newproc1函数](https://github.com/golang/go/blob/a1ef950a15517bca223d079a6cf65948c3db9694/src/runtime/proc1.go#L2228)，其主要作用：
+1. 为调用函数创建了协程对象`g`，并将参数等信息保存下来；
+2. 更新`g`状态为`Grunnable`，并保存到`runnext`的运行队列中；
+
+
+具体流程如下图，
+
+![image](https://user-images.githubusercontent.com/3946563/90798298-59acce80-e344-11ea-82d7-7440e6403904.png)
