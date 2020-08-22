@@ -28,7 +28,7 @@ func main() {
 
 
 
-首先编译出Go程序，然后找到整个程序的[entry point](https://en.wikipedia.org/wiki/Entry_point)。
+首先需要找到整个程序的[entry point](https://en.wikipedia.org/wiki/Entry_point)，然后再梳理对应的流程。
 
 
 
