@@ -126,3 +126,60 @@ Warning: debugging optimized function
     11:         JMP     _rt0_amd64_lib(SB)
 ```
 
+其中`rt0`是`runtime0`的缩写。
+
+-----
+
+### _rt0_amd64_linux入口
+
+_rt0_amd64_linux位于`rt0_linux_amd64.s`文件中。
+
+```
+TEXT _rt0_amd64_linux(SB),NOSPLIT,$-8
+	LEAQ	8(SP), SI // argv
+	MOVQ	0(SP), DI // argc
+	MOVQ	$main(SB), AX
+	JMP	AX
+	
+TEXT main(SB),NOSPLIT,$-8
+	MOVQ	$runtime·rt0_go(SB), AX
+	JMP	AX
+```
+
+首先，把`argv`数组的地址放在SI寄存器，`argc`参数值放在DI寄存器中，调用`$main`方法。
+
+`$main`方法又调用了`$runtime.rt0_go`方法，该方法内部实际做了初始化的工作。
+
+![image-20200822230551117](image-20200822230551117.png)
+
+
+
+### rt0_go初始化工作
+
+```
+TEXT runtime·rt0_go(SB),NOSPLIT,$0
+	// copy arguments forward on an even stack
+	MOVQ	DI, AX		// argc
+	MOVQ	SI, BX		// argv
+	SUBQ	$(4*8+7), SP		// 2args 2auto
+	ANDQ	$~15, SP  // 栈顶寄存器SP 按照16字节对齐
+	MOVQ	AX, 16(SP)  // 保存寄存器AX值：argc值
+	MOVQ	BX, 24(SP)  // 保存寄存器BX值：argv地址
+	
+	// 初始化g0
+	// create istack out of the given (operating system) stack.
+	// _cgo_init may update stackguard.
+	MOVQ	$runtime·g0(SB), DI  // g0的地址放入DI寄存器
+	LEAQ	(-64*1024+104)(SP), BX  // BX寄存器的值：SP+(-64*1024+104)
+	MOVQ	BX, g_stackguard0(DI)  // g0.stackguard0 = BX的值（即SP+(-64*1024+104)）
+	MOVQ	BX, g_stackguard1(DI)  // g0.stackguard1 = BX的值（即SP+(-64*1024+104)）
+	MOVQ	BX, (g_stack+stack_lo)(DI)  // g0.stack.lo = BX的值（即SP+(-64*1024+104)）
+	MOVQ	SP, (g_stack+stack_hi)(DI)  // g0.stack.hi = SP
+```
+
+
+
+初始化完后，g0与内存栈的状态如下：
+
+![image-20200822233429873](image-20200822233429873.png)
+
