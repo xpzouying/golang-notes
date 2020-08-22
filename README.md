@@ -16,4 +16,4 @@
 
 - 不要使用`Fork`
 
-- 点击`Star`，保持`watch`
+- 点击`Star`，保持`Watching`状态
