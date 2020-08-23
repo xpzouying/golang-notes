@@ -154,7 +154,10 @@ TEXT main(SB),NOSPLIT,$-8
 
 
 
-### rt0_go初始化工作
+### 初始化g0
+
+跳转到`runtime.rt0_go`函数：该函数的主要工作是对`g0`协程进行初始化。
+
 
 ```
 TEXT runtime·rt0_go(SB),NOSPLIT,$0
@@ -165,7 +168,7 @@ TEXT runtime·rt0_go(SB),NOSPLIT,$0
 	ANDQ	$~15, SP  // 栈顶寄存器SP 按照16字节对齐
 	MOVQ	AX, 16(SP)  // 保存寄存器AX值：argc值
 	MOVQ	BX, 24(SP)  // 保存寄存器BX值：argv地址
-	
+
 	// 初始化g0
 	// create istack out of the given (operating system) stack.
 	// _cgo_init may update stackguard.
@@ -183,3 +186,157 @@ TEXT runtime·rt0_go(SB),NOSPLIT,$0
 
 ![image-20200822233429873](image-20200822233429873.png)
 
+
+
+### cgo初始化
+
+g0初始化完成后，接着探测CPU信息、CPU类型、指令集等，接着做cgo相关的初始化，该部分详细的分析暂时忽略，不影响分析初始化流程。
+
+```
+// ... 忽略探测CPU信息和指令集
+```
+
+接着做cgo初始化，
+
+```
+  // 如果存在_cgo_init，调用该函数
+  // if there is an _cgo_init, call it.
+	MOVQ	_cgo_init(SB), AX
+	TESTQ	AX, AX
+	JZ	needtls  // JZ：如果为0，表示如果不存在，则忽略下面指令，直接跳到needtls
+	
+	// ...
+	JEQ ok
+
+needtls:
+  // ...
+```
+
+
+### 初始化TLS
+
+初始化tls，[线程局部存储 Thread-local storage](https://en.wikipedia.org/wiki/Thread-local_storage)是为每一个线程提供各自的存储。
+
+TLS的对象是跟着线程开始时分配，线程结束后回收，每个线程有各自的独占实例对象。简单说就是各个线程自己的局部变量。
+
+
+```
+needtls:
+      // 如果是Plan9, Solaris，则忽略
+	// skip TLS setup on Plan 9
+	CMPL	runtime·isplan9(SB), $1
+	JEQ ok
+	// skip TLS setup on Solaris
+	CMPL	runtime·issolaris(SB), $1
+	JEQ ok
+
+      // 将tls0的地址存入DI
+	LEAQ	runtime·tls0(SB), DI
+	CALL	runtime·settls(SB)  // 调用settls将tls0参数保存在FS寄存器中。
+
+      // 对tls进行测试，确保正确。
+      // 将0x123的值保存到TLS中，然后读取tls0的值，测试比较是否为之前保存的0x123
+	// store through it, to make sure it works
+	get_tls(BX)
+	MOVQ	$0x123, g(BX)
+	MOVQ	runtime·tls0(SB), AX
+	CMPQ	AX, $0x123
+	JEQ 2(PC)
+	MOVL	AX, 0	// abort
+ok:
+      // ...
+```
+
+说明：
+
+1. tls0是当前m0线程的的tls变量，为一个数组，长度为8，即tls0中可存放8个地址。
+
+2. `settls`通过调用`arch_prctl`系统调用保存tls0到FS段寄存器中。也即是未来可以通过访问FS段寄存器即可访问tls0。
+
+      ```
+      // set tls base to DI
+      TEXT runtime·settls(SB),NOSPLIT,$32
+            ADDQ	$8, DI	// ELF wants to use -8(FS)
+
+            MOVQ	DI, SI
+            MOVQ	$0x1002, DI	// ARCH_SET_FS
+            MOVQ	$158, AX	// arch_prctl
+            SYSCALL
+            CMPQ	AX, $0xfffffffffffff001
+            JLS	2(PC)
+            MOVL	$0xf1, 0xf1  // crash
+            RET
+      ```
+
+      runtime.settls定义在`sys_linux_amd64.s`文件中。
+
+      该函数的作用是：将tls0的数组保存在FS中，使用`-8(FS)`可取得tls0中的数据（第2个地址？）。
+
+      其中用到了系统调用，对于系统调用，寄存器的规则如下，
+
+      | RDI    | RSI    | RDX    | R10    | R8     | R9     | RAX                 |
+      | :----- | :----- | :----- | :----- | :----- | :----- | :------------------ |
+      | 参数一 | 参数二 | 参数三 | 参数四 | 参数五 | 参数六 | 系统调用编号/返回值 |
+
+      在此，
+
+      1. 系统调用：158号，即`arch_prctl`。其作用是设置架构特定的线程状态。
+
+      2. 入参1：`ARCH_SET_FS`，表示设置`FS`寄存器。
+
+      3. 入参2：tls0的首地址+8
+
+      4. 返回值保存在AX寄存器
+
+
+3. `get_tls`和`g`的函数定义在`runtime/go_tls.h`中。
+      ```
+      #ifdef GOARCH_amd64
+      #define	get_tls(r)	MOVQ TLS, r
+      #define	g(r)	0(r)(TLS*1)
+      #endif
+      ```
+
+上述过程即完成了TLS的初始化工作。
+
+
+### 绑定m0和g0
+
+
+```
+	// set the per-goroutine and per-mach "registers"
+	get_tls(BX)
+	LEAQ	runtime·g0(SB), CX
+	MOVQ	CX, g(BX)
+	LEAQ	runtime·m0(SB), AX
+
+	// save m->g0 = g0
+	MOVQ	CX, m_g0(AX)
+	// save m0 to g0->m
+	MOVQ	AX, g_m(CX)
+
+	CLD				// convention is D is always left cleared
+	CALL	runtime·check(SB)
+
+	MOVL	16(SP), AX		// copy argc
+	MOVL	AX, 0(SP)
+	MOVQ	24(SP), AX		// copy argv
+	MOVQ	AX, 8(SP)
+	CALL	runtime·args(SB)
+	CALL	runtime·osinit(SB)
+	CALL	runtime·schedinit(SB)
+
+	// create a new goroutine to start program
+	MOVQ	$runtime·mainPC(SB), AX		// entry
+	PUSHQ	AX
+	PUSHQ	$0			// arg size
+	CALL	runtime·newproc(SB)
+	POPQ	AX
+	POPQ	AX
+
+	// start this M
+	CALL	runtime·mstart(SB)
+
+	MOVL	$0xf1, 0xf1  // crash
+	RET
+```
