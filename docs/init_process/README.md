@@ -300,33 +300,52 @@ ok:
 上述过程即完成了TLS的初始化工作。
 
 
+
 ### 绑定m0和g0
 
+初始化TLS后，就开始绑定m0和g0。
 
 ```
+ok:
 	// set the per-goroutine and per-mach "registers"
-	get_tls(BX)
-	LEAQ	runtime·g0(SB), CX
-	MOVQ	CX, g(BX)
-	LEAQ	runtime·m0(SB), AX
+	get_tls(BX)  // 加载当前线程（即m0）的TLS，即FS段基址到BX寄存器
+	LEAQ	runtime·g0(SB), CX  // CX = g0地址
+	MOVQ	CX, g(BX)  // 将g0的地址保存到TLS中，即m0.tls
+	LEAQ	runtime·m0(SB), AX  // AX = m0地址
 
 	// save m->g0 = g0
 	MOVQ	CX, m_g0(AX)
 	// save m0 to g0->m
 	MOVQ	AX, g_m(CX)
 
+  // 类型检查是否正确
 	CLD				// convention is D is always left cleared
 	CALL	runtime·check(SB)
+```
 
+绑定m0和g0后，g0和m0、寄存器、内存之间的关系更新如下图，
+
+![image-20200823154830880](image-20200823154830880.png)
+
+
+
+完成g0和m0的初始化操作后，就进入实际的main函数启动。
+
+
+```
 	MOVL	16(SP), AX		// copy argc
 	MOVL	AX, 0(SP)
 	MOVQ	24(SP), AX		// copy argv
 	MOVQ	AX, 8(SP)
-	CALL	runtime·args(SB)
-	CALL	runtime·osinit(SB)
-	CALL	runtime·schedinit(SB)
+	CALL	runtime·args(SB)  // 调用runtime1.go中args()函数：初始化args
+	CALL	runtime·osinit(SB)  // 调用os1_linux.go中的osinit()函数：初始化CPU核数。有多少个CPU core，初始化全局变量ncpu。
+	CALL	runtime·schedinit(SB)  // 调度系统初始化
 
-	// create a new goroutine to start program
+
+	// 下段代码的主要工作是使用newproc创建一个新的goroutine用于运行runtime.main函数
+	// 由于newproc的定义：func newproc(siz int32, fn *funcval)
+	// 所以，压栈传入runtime.main的函数地址，和对应函数参数的字节大小。
+	// 函数的参数是紧挨着函数地址，所以不需要传入第一个参数的地址。在此由于runtime.main函数是没有参数，则直接为0。
 	MOVQ	$runtime·mainPC(SB), AX		// entry
 	PUSHQ	AX
 	PUSHQ	$0			// arg size
@@ -334,9 +353,34 @@ ok:
 	POPQ	AX
 	POPQ	AX
 
+	// 启动M，进入调度循环状态，程序运行
 	// start this M
 	CALL	runtime·mstart(SB)
 
 	MOVL	$0xf1, 0xf1  // crash
 	RET
 ```
+
+
+
+## 总结
+
+程序在启动的时候，第一个指令地址存放在`entry point`的地方。
+
+
+
+初始化过程中，会对2个特殊的对象进行初始化：`g0`、`m0`。
+
+- g0的栈空间大小约为64KB
+- 对于每一个OS级别的线程来说，都会使用TLS（thread-local storage）存储g0这个特殊的goroutine信息。
+- 由于g0和m0进行了相互绑定，所以也可以通过g0找到对应的m0。
+
+
+接着就进入了程序启动的流程，对应的流程总结为下列步骤，
+
+1. args：初始化启动参数
+2. osinit：初始化处理线程数
+3. scheinit：初始化调度系统
+4. 创建一个新的G，并入队列
+5. runtime.mstart启动M开始运行
+
