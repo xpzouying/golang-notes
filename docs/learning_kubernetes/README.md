@@ -49,6 +49,8 @@ Docker中的编排项目（Container Orchestration）：Fig，后改名为Compos
 有状态应用部署框架：Operator
 
 
+-----
+
 
 ## 白话容器基础
 
@@ -210,3 +212,87 @@ while : ; do : ; done &
 
 > 上述的问题可以借助`lxcfs`解决。
 > 由于`top`是从`/proc/stat`下获取数据，所以让容器不挂在宿主机的该目录即可。
+
+
+
+
+### Docker镜像
+
+前面已经提到，对于Docker实例来说，简单来说是一个应用进程。该进程通过Namespace进行各种**隔离**，通过Cgroups进行资源的**限制**。
+
+有个比较特殊的Namespace是文件系统的隔离：使用`Mount Namespace`。需要手动执行触发。`Mount Namespace`是基于对`chroot`的不断改良发明出来的，也是Linux中第一个Namespace。
+
+
+关于Namespace的详细介绍可以参考改文章：
+[左耳耗子 - DOCKER基础技术：LINUX NAMESPACE（上）](https://coolshell.cn/articles/17010.html)
+
+
+**“容器镜像”**
+
+挂在在容器根目录上，用于为容器进程提供隔离后执行环境的文件系统。也叫做：**rootfs（根文件系统）**。
+
+一般包括：`/bin`, `/etc`, `/proc`等等。
+
+
+**Docker项目**
+
+最核心的原理就是为待创建的用户进程：
+
+1. 启用Linux Namespace配置；
+
+2. 设置指定的Cgroups参数；
+
+3. 切换进程的根目录（Change Root）；（在该步骤会优先调用pivot_root系统调用）
+
+
+rootfs只包含文件、配置和目录，不包含操作系统内核。
+
+同一台机器上，所有的容器都共享操作系统的内核。
+
+
+**依赖库/镜像版本**
+
+对于应用程序来说，操作系统本身才是最完整的“依赖库”。
+
+有了`rootfs`后，我们就可以对应用程序打包一套完整的依赖库环境。解决了完整的依赖问题后，现在需要解决的是该依赖库的版本控制问题。
+
+举例来说，但对于传统的依赖库环境来说，v1.1是基于v1.0版本修改而成，v1.0版本和v1.1版本都具备完整的环境，它们之间没有太多的联系。未来出现v1.2版本后，经过少量修改后，又得生成一套全新的依赖库。那么，解决方法就是希望每次只需要维护修改的增量内容，而不是每次重新创建一个全新、完整的依赖库。
+
+为此，引入了`layer`。每一步操作，会生成一个层，也即是增量rootfs。为此引入“联合文件系统（Union File System）”，UnionFS。
+
+
+`AuFS`: Another UnionFS，又改名为：Alternative UnionFS，最后改为：Advance UnionFS
+
+- 是对Linux原生UnionFS的重写和改进；
+
+- 只能在Ubuntu和Debian发行版上使用；
+
+
+对于AuFS，最关键的目录结构是在：`/var/lib/docker`下的diff目录：
+
+```
+/var/lib/docker/aufs/diff/<layer_id>
+```
+
+
+“镜像”实际上就是操作系统的rootfs，内容就是操作系统的所有文件和目录。不同的是：往往由多个“层layer”组成。
+
+使用命令可以查看，
+
+```bash
+docker image inspect ubuntu:latest
+
+//...
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:918b1e79e35865cfaa7af9e07fa2a7aaaa2885e6bee964691a93c5db631b0aff",
+                "sha256:83b575865dd109e77301a1be1e510cfffa6b89b9ff6355df22b5008315778263",
+                "sha256:153bd22a8e96919e8eb890cc50aba51d7c16ea0746c2f020f21312f88e65f5c8",
+                "sha256:ca893d4b83a60ef4e859785bc6b4072242ae07c7d6d0a07098847bc281b525b8",
+                ...
+            ]
+        },
+// ...
+```
+
