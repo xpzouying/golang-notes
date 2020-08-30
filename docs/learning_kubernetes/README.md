@@ -296,3 +296,60 @@ docker image inspect ubuntu:latest
 // ...
 ```
 
+
+**查看AuFS挂在信息**
+
+```bash
+$ cat /proc/mounts| grep aufs
+none /var/lib/docker/aufs/mnt/6e3be5d2ecccae7cc0fc... aufs rw,relatime,si=972c6d361e6b32ba,dio,dirperm1 0 0
+```
+
+会获得AuFS的内部ID，即si=972c6d361e6b32ba。使用该ID，可以在/sys/fs/aufs查看联合挂载的信息。
+
+```bash
+$ cat /sys/fs/aufs/si_972c6d361e6b32ba/br[0-9]*
+/var/lib/docker/aufs/diff/6e3be5d2ecccae7cc...=rw
+/var/lib/docker/aufs/diff/6e3be5d2ecccae7cc...-init=ro+wh
+/var/lib/docker/aufs/diff/32e8e20064858c0f2...=ro+wh
+/var/lib/docker/aufs/diff/2b8858809bce62e62...=ro+wh
+/var/lib/docker/aufs/diff/20707dce8efc0d267...=ro+wh
+/var/lib/docker/aufs/diff/72b0744e06247c7d0...=ro+wh
+/var/lib/docker/aufs/diff/a524a729adadedb90...=ro+wh
+```
+
+
+`rootfs`的结构说明：
+
+![](./docker_rootfs.png)
+
+
+
+1. 只读层：以增量方式包含操作系统的一部分。
+
+    对应的是镜像的Layers，挂在方式是只读的（ro+wh，即readonly+whiteout）。可以去对应的路径下查看层的内容：`/var/lib/docker/aufs/diff/{sha256}`。
+
+2. 可读写层：挂在方式：rw，即read write。
+
+    在没有读写操作之前，该目录是空的。读写操作会在该层以增量方式生成文件。如果是删除操作，则创建一个whiteout文件，把只读层里的文件“遮挡”起来。
+
+    `docker commit`会提交该层的修改。
+
+3. init层：Docker项目单独生成的一个内部层，存放`/etc/hosts`、`/etc/resolv.conf`等信息。
+
+    `docker commit`不会包含该层。
+
+
+**总结**
+
+1. 容器镜像，也叫做`rootfs`。只是操作系统的所有文件和目录，不包含内核。
+
+2. 文件系统的隔离：使用`Mount Namespace`和`rootfs`，并使用`chroot`和`pivot_root`两个系统调用切换进程根目录。
+
+3. 镜像的增量修改引入了`Layer`的概念。
+
+    UnionFS的实现：aufs、device mapper、btrfs、overlayfs、vfs、zfs。
+
+    aufs是ubuntu常用，device mapper是centos常用，btrfs是SUSE，overlayfs ubuntu和centos都会用。
+
+    最新的Docker版本，Ubuntu、CentOS都使用overlayfs。
+
