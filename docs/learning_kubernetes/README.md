@@ -520,9 +520,95 @@ HOW：
 
 
 
-
 -----
 
-**TODO**
+### Kubernetes的本质
 
-- [ ] DEMO练习
+一个“容器”实际上是：由`Linux Namespace`、`Linux Cgroups`和`rootfs`三种技术构建出来的进程的隔离环境。
+
+
+正在运行的Linux容器：
+
+- 静态视图：容器镜像（Container Image），挂载在`/var/lib/docker/aufs/mnt`上的rootfs。
+
+- 动态视图：容器运行时（Container Runtime），由Namespace + Cgroups构成的隔离环境。
+
+
+**编排工具**
+
+- Docker Compose + Swarm
+
+- Kubernetes
+
+
+**Kubernetes解决的问题是什么？**
+
+基于Google “Borg”项目。
+
+提供了不限于下列的能力，
+
+- 编排
+
+- 调度
+
+- 集群管理
+
+
+**Kubernetes项目架构**
+
+![](https://d33wubrfki0l68.cloudfront.net/2475489eaf20163ec0f54ddc1d92aa8d4c87c96b/e7c81/images/docs/components-of-kubernetes.svg)
+
+
+组成节点：
+
+1. Master：控制节点
+    
+    重要组成组件：
+
+    - kube-apiserver：负责API服务
+
+    - kube-scheduler：负责调度
+
+    - kube-controller-manager：负责容器编排
+
+    整个集群的持久化数据，由kube-apiserver处理后保存在Etcd中。
+
+
+2. Node：计算节点
+
+    核心部分是：kubelet组件。主要责任：
+    
+        - 负责通过`CRI（Container Runtime Interface）`的远程接口和容器运行时（Docker项目）打交道。
+
+        - 通过gRPC协议同`Device Plugin`的插件进行交互，来管理GPU等宿主机物理设备的主要组件。
+
+        - 调用网络插件和存储插件为容器配置网络和持久化存储。对应的接口：CNI（Container Networking Interface）和CSI（Container Storage Interface）
+
+
+**Kubernets的编排优势**
+
+原有的编排服务的不足，比如Docker Swarm+Compose，解决依赖的方法就是把例如IP地址、端口以环境变量的形式注入。
+
+Kubernetes的主要设计思想是：**从更宏观的角度，以统一的方式来定义任务之间的各种关系，并且为将来支持更多种类的关系留有余地。**
+
+
+- `Pod`是Kubernetes中最基础的一个对象。
+
+- 应用之间的关系，提供了`Service`的服务。
+
+对于之前的不足，做法是：
+
+给`Pod`绑定了一个`Service`服务，Service服务声明的IP地址等信息是“终生不变”。Service服务的主要作用是：**作为Pod的代理入口（Portal），从而代替Pod对外暴露一个固定的网络地址。**
+
+
+
+
+
+
+
+
+
+
+
+
+
