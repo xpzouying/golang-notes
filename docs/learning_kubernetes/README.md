@@ -353,3 +353,176 @@ $ cat /sys/fs/aufs/si_972c6d361e6b32ba/br[0-9]*
 
     最新的Docker版本，Ubuntu、CentOS都使用overlayfs。
 
+
+
+### 重新认识Docker容器
+
+**Dockerfile**
+
+使用`Dockerfile`制作容器镜像。
+
+Dockerfile的设计思想：使用一些标准的原语（即大写高亮的词语），描述我们所构建的Docker镜像。按照顺序执行处理的。
+
+基本原语介绍：
+
+- FROM：指定基础镜像
+- RUN：容器内执行shell命令
+- WORKDIR：修改当前目录
+- CMD：指定容器中的进程
+- ENTRYPOINT：CMD的内容为ENTRYPOINT的参数。完整的进程执行格式是："ENTRYPOINT CMD"。默认Docker会提供隐含的ENTRYPOINT，即：`/binsh -c`。
+
+
+**Docker Image**
+
+使用`docker build`制作这个镜像。
+
+```bash
+# -t 指定Tag名字
+docker build -t helloworld .
+```
+
+**Dockerfile的每个原语执行后，都会生成一个对应的镜像层。**
+
+
+使用`docker image ls`查看编译结果。
+
+使用`docker run`启动容器。
+
+```bash
+# 将容器实例的80端口映射到4000端口
+docker run -p 4000:80 helloworld
+```
+
+使用`docker ps`查看运行实例。
+
+
+**Docker Hub**
+
+分享容器的镜像到Docker Hub。
+
+1. 注册Docker Hub账号，使用`docker login`登陆；
+
+2. docker tag起一个完整的名字：
+
+    ```bash
+    # geektime 镜像仓库（Repository），也即为账号名称
+    docker tag helloworld geektime/helloworld:v1
+    ```
+
+3. 上传
+
+    ```bash
+    docker push geektime/helloworld:v1
+    ```
+
+
+**docker commit 提交修改**
+
+使用`docker commit`修改正在运行的镜像，提交为一个镜像。
+
+```bash
+# ... 修改容器镜像内的内容
+
+# 提交镜像保存
+docker commit instance01 geektime/helloworld:v2
+```
+
+
+**docker exec的原理**
+
+`docker exec`是在容器中运行的，其工作原理是：一个进程，选择加入某个进程已有的Namespace，即达到了“进入”这个进程所在容器的目的。
+
+使用`setns()`的Linux系统调用可以进行Namespace的切换。
+
+
+如何查看所在容器的Namespace：
+
+1. 查看实例的在系统的Pid
+
+    ```bash
+    docker inspect --format '{{ .State.Pid }}' fed70e1f6d0c
+    # 5843
+    ```
+
+2. 宿主机查看对应的Namespace文件：
+
+    ```bash
+    ls -l /proc/5843/ns
+
+    lrwxrwxrwx 1 root root 0 Aug 30 05:07 cgroup -> 'cgroup:[4026531835]'
+    lrwxrwxrwx 1 root root 0 Aug 30 05:05 ipc -> 'ipc:[4026532642]'
+    lrwxrwxrwx 1 root root 0 Aug 30 05:05 mnt -> 'mnt:[4026532640]'
+    lrwxrwxrwx 1 root root 0 Aug 30 05:05 net -> 'net:[4026532645]'
+    lrwxrwxrwx 1 root root 0 Aug 30 05:05 pid -> 'pid:[4026532643]'
+    lrwxrwxrwx 1 root root 0 Aug 30 05:07 pid_for_children -> 'pid:[4026532643]'
+    lrwxrwxrwx 1 root root 0 Aug 30 05:07 user -> 'user:[4026531837]'
+    lrwxrwxrwx 1 root root 0 Aug 30 05:05 uts -> 'uts:[4026532641]'
+    ```
+
+
+使用`docker run -net`启动参数可以指定Network Namespace。
+
+- `-net container:{container_id}` 加入到另一个容器的Network Namespace
+- `-net host` 加入到宿主机的Network Namespace
+
+
+**Docker Registry**
+
+企业内部类似于`Docker Hub`的镜像维护系统。
+
+
+**Docker Volume 数据卷**
+
+WHY：由于使用了`rootfs`机制和`Mount Namespace`，从而构建了一套与宿主机隔离的文件系统环境。从而遇到新问题：
+
+1. 容器里面的新建文件，如何让宿主机获取？
+
+2. 宿主机上面的文件和目录，如何让容器的进程访问？
+
+WHAT：Docker Volume要解决的问题：`Volume机制`，允许挂载宿主机的目录文件到容器中。
+
+```bash
+# 如果没有指定，则宿主机会创建临时文件挂载：/var/lib/docker/volumes/[VOLUME_ID]/_data
+docker run -v /test ...
+
+# 指定目录挂载
+docker run -v /home:/test ...
+```
+
+
+HOW：
+
+1. 准备好rootfs
+
+2. 挂载宿主机目录到容器目录
+
+3. 执行chroot
+
+备注：
+
+容器进行挂载命令时，容器进程（dockerinit）已经创建。该进程负责：根目录的准备、挂载设备和目录、配置hostname等初始化操作，最后通过`execv()`系统调用，称为PID=1的进程。
+
+挂载技术：绑定挂载（bind mount）机制，允许挂载一个目录或文件，而不是整个设备。
+
+绑定挂载是inode替换的过程。
+
+![](./bind_mount.png)
+
+
+在容器内，Volume挂载的目录下，新增/修改文件不会被`docker commit`提交掉。但是挂载点的目录由于需要挂载，所以该目录会被创建，但是目录中的文件在宿主机上不会被看到。
+
+
+**总结**
+
+容器镜像的层次关系：
+
+![](docker_image_layers.png)
+
+
+
+
+-----
+
+**TODO**
+
+- [ ] DEMO练习
