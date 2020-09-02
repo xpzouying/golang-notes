@@ -27,3 +27,16 @@
 
 Pod就是Kubernetes的“应用”，而一个应用，就可以由多个容器组成。
 
+
+
+## 总结
+
+### 练习流程
+
+制作应用，发布Docker镜像。
+
+1. 本地使用Docker测试代码，制作镜像；
+2. 选择合适的Kubernetes API对象，编写对应的YAML文件。
+3. 在Kubernetes上部署YAML文件
+
+注意：部署Kubernetes后，不推荐使用Docker命令行了。
