@@ -62,7 +62,7 @@ Docker中的编排项目（Container Orchestration）：Fig，后改名为Compos
 示例：命令：
 
 ```bash
-docker run -it busybox /binsh
+docker run -it busybox /bin/sh
 ```
 
 其中：`-it参数`：启动容器后，在容器内执行/bin/sh，分配一个文本输入/输出环境，也即是TTY。表示可以和Docker容器进行交互。
@@ -95,6 +95,16 @@ docker run -it busybox /binsh
 - 容器的优点：敏捷、高性能
 
 - 虚拟机的优点：隔离彻底
+
+
+
+**白话一下** 
+
+> `docker run -it busybox /bin/sh` 在Namespace中发生了什么？
+> 1. 使用busybox镜像环境，启动了一个新的进程，运行了busybox中的命令`/bin/sh`。
+> 2. sh进程的PID在宿主机上如果为PID=100。在Namespace中，由于`CLONE_NEWPID`参数，所以在容器内表现为PID=1，表示是初始化进程。
+> 3. 由于我们run时，加入`-it`，所以可以在容器中运行任何命令。比如`ls`，那么相当于`sh`，也是PID=1的进程会从自身创建子进程来运行对应的命令。该子进程在Namespace的PID可能为1234。
+
 
 
 
