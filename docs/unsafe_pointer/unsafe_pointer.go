@@ -46,7 +46,6 @@ func accessStruct() {
 	agePtr = unsafe.Pointer((uintptr(f1Ptr) + unsafe.Offsetof(f1.Age)))
 	*(*int)(agePtr) = 30
 	log.Printf("after update f1: %+v", f1)
-
 }
 
 func main() {
