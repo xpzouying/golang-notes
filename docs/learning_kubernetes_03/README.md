@@ -68,3 +68,10 @@ Pod时Kubernetes中原子调度单位，而不是资源。
 - Failed：Pod里至少有个容器以非正常的状态退出（非0的返回码）。
 - Unknown：异常状态，意味着Pod的状态不能被持续的被kubelet汇报给kube-apiserver。可能是Master和Kubelet之间的通信出了问题。
 
+
+**Pod Lifecycle**
+
+在容器状态发生变化时，触发一系列“钩子”。比如，
+
+- postStart：容器启动后，立刻执行一个指定的操作。
+- preStop：容器被杀死之前，执行一个操作。可以实现“优雅退出”。
