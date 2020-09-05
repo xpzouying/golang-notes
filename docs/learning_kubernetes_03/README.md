@@ -53,3 +53,18 @@ Pod时Kubernetes中原子调度单位，而不是资源。
 
 3. sidecar模式
    可以启动一个辅助的容器，来完成独立于主容器之外的工作。
+
+
+-----
+
+## Kubernetes 作业管理
+
+
+**Pod Status：状态**
+
+- Pending：Pod的YAML文件已经提交给Kubernetes，API对象已经创建并保存在etcd中。但是有可能不能被顺利创建。
+- Running：已经调度成功，跟具体的节点绑定。
+- Succeeded：Pod中的所有容器都已经完毕，并已经退出了。
+- Failed：Pod里至少有个容器以非正常的状态退出（非0的返回码）。
+- Unknown：异常状态，意味着Pod的状态不能被持续的被kubelet汇报给kube-apiserver。可能是Master和Kubelet之间的通信出了问题。
+
