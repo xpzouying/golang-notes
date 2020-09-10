@@ -23,3 +23,17 @@ func TestTwoLockQueue_Enqueue(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, 1, v)
 }
+
+func TestTwoLockQueue_Enqueue_And_Dequeue(t *testing.T) {
+	q := NewTwoLockQueue()
+
+	for i := 0; i < 100; i++ {
+		q.Enqueue(i)
+	}
+
+	for i := 0; i < 100; i++ {
+		v, err := q.Dequeue()
+		assert.NoError(t, err)
+		assert.Equal(t, i, v)
+	}
+}
