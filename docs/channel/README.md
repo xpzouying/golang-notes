@@ -87,3 +87,57 @@ type waitq struct {
         last  *sudog
 }
 ```
+
+
+## 创建channel
+
+根据前面提到的channel的创建形式主要分为有缓存的和无缓存的channel，对应的创建形式为，
+
+
+```go
+// filename: make_chan.go
+package main
+
+func main() {
+	c1 := make(chan int, 10)
+	c2 := make(chan int)
+	_ = c1
+	_ = c2
+}
+```
+
+通过命令生成Golang汇编，
+
+```bash
+go build -gcflags "-N -l -S" make_chan.go &> make_chan.s
+```
+
+删除无关代码，得到对应的汇编代码为：
+
+有缓存的buffer创建汇编为，
+
+```
+# make(chan int, 10)
+# make的第一个参数为chan int
+0x001d 00029 (.../make_chan.go:4)	LEAQ	type.chan int(SB), AX
+0x0024 00036 (.../make_chan.go:4)	MOVQ	AX, (SP)
+# make的第二个参数为10
+0x0028 00040 (.../make_chan.go:4)	MOVQ	$10, 8(SP)
+# 调用runtime中的makechan函数
+0x0031 00049 (.../make_chan.go:4)	CALL	runtime.makechan(SB)
+```
+
+无缓存的buffer创建汇编为，
+
+```
+# make(chan int)
+# make的第一个参数为chan int
+0x0040 00064 (.../make_chan.go:5)	LEAQ	type.chan int(SB), AX
+0x0047 00071 (.../make_chan.go:5)	MOVQ	AX, (SP)
+# make的第二个参数为0
+0x004b 00075 (.../make_chan.go:5)	MOVQ	$0, 8(SP)
+# 调用runtime中的makechan函数
+0x0054 00084 (.../make_chan.go:5)	CALL	runtime.makechan(SB)
+```
+
+由此可见当我们在make channel时调用的是同一个函数，只是第二个参数不同而已，unbuffer channel其实就是`make(chan int, 0)`。
