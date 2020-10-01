@@ -141,3 +141,43 @@ go build -gcflags "-N -l -S" make_chan.go &> make_chan.s
 ```
 
 由此可见当我们在make channel时调用的是同一个函数，只是第二个参数不同而已，unbuffer channel其实就是`make(chan int, 0)`。
+
+
+**runtime.makechan函数分析**
+
+源码见：`runtime/chan.go`，点击[github.com/go1.5](https://github.com/golang/go/blob/release-branch.go1.5/src/runtime/chan.go)。
+
+代码删掉不必要的代码段。
+
+```go
+func makechan(t *chantype, size int64) *hchan {
+	elem := t.elem
+
+   // ...
+   // 省略一些条件判断
+
+	var c *hchan
+	if elem.kind&kindNoPointers != 0 || size == 0 {
+      // 如果是unbuffer channel，则分配hchan大小的内存空间。
+		c = (*hchan)(mallocgc(hchanSize+uintptr(size)*uintptr(elem.size), nil, flagNoScan))
+		if size > 0 && elem.size != 0 {
+         c.buf = add(unsafe.Pointer(c), hchanSize)
+		} else {
+         // 并让hchan中的成员buf指向内存地址自身。（该地址提供给同步操作）
+			c.buf = unsafe.Pointer(c)
+		}
+	} else {
+      c = new(hchan)
+      // buf指向环形buffer
+		c.buf = newarray(elem, uintptr(size))
+   }
+   // 元素的个数
+   c.elemsize = uint16(elem.size)
+   // 元素的类型
+   c.elemtype = elem
+   // 环形buffer的大小
+	c.dataqsiz = uint(size)
+
+	return c
+}
+```
