@@ -181,3 +181,155 @@ func makechan(t *chantype, size int64) *hchan {
 	return c
 }
 ```
+
+
+## 发送数据到channel
+
+先分析`unbuffer channel`。
+
+```go
+package main
+
+func main() {
+	c2 := make(chan int)
+	c2 <- 1
+}
+```
+
+导出汇编，获得`c2<-1`的对应的汇编代码为：
+
+```bash
+go build -gcflags "-N -l -S" make_chan.go &> make_chan.s
+```
+
+```
+0x0036 00054 (channel/make_chan.go:4)	MOVQ	16(SP), AX
+0x003b 00059 (channel/make_chan.go:4)	MOVQ	AX, "".c2+24(SP)
+0x0040 00064 (channel/make_chan.go:5)	MOVQ	AX, (SP)
+0x0044 00068 (channel/make_chan.go:5)	LEAQ	""..stmp_0(SB), AX
+0x004b 00075 (channel/make_chan.go:5)	MOVQ	AX, 8(SP)
+
+0x0050 00080 (channel/make_chan.go:5)	CALL	runtime.chansend1(SB)
+```
+
+可以看到调用了`runtime.chansend1`函数。
+
+```go
+func chansend1(t *chantype, c *hchan, elem unsafe.Pointer) {
+	chansend(t, c, elem, true, getcallerpc(unsafe.Pointer(&t)))
+}
+
+func chansend(t *chantype, c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
+   // ...
+
+   // 如果往nil channel中发送，则抛出unreachable的异常
+	if c == nil {
+		if !block {
+			return false
+      }
+      // code src: trace.go
+      // traceEvGoStop = 16 // goroutine stops (like in select{}) [timestamp, stack]
+      //
+      // gopark函数会将goroutine变成waiting状态并调用unlockf。
+      // 如果unlockf返回false，则goroutine会被唤醒。
+		gopark(nil, nil, "chan send (nil chan)", traceEvGoStop, 2)
+		throw("unreachable")
+	}
+
+   // ...
+
+	lock(&c.lock)
+	if c.closed != 0 {
+      // 如果往已关闭的channel发送，则抛出异常：send on closed channel
+		unlock(&c.lock)
+		panic("send on closed channel")
+	}
+
+   if c.dataqsiz == 0 { // 同步channel
+      // 从接收队列中寻找接收者
+		sg := c.recvq.dequeue()
+		if sg != nil {
+         // 如果找到接收者
+			unlock(&c.lock)
+
+         recvg := sg.g
+			if sg.elem != nil {
+            // 如果接收者的data element（unsafe.Pointer类型）不为nil，
+            // 则调用syncsend方法直接拷贝需要发送的元素到接收者中的sudo.elem成员。
+            // 
+            // TODO(zy): 在syncsend中，函数结束前会调用sg.elem = nil。
+            // 也即在讲elem的数据拷贝到接收者的elem地址后，elem的地址会被置空，难道接收端有其他的地方记录该地址？
+				syncsend(c, sg, ep)
+         }
+         // 协程对象g 被唤醒时的参数
+         recvg.param = unsafe.Pointer(sg)
+
+         // 使用goready唤醒接收者的协程
+			goready(recvg, 3)
+			return true
+      }
+      
+      // ...
+
+      // 如果没有接收者，则在当前channel阻塞
+      gp := getg()
+      
+      // 生成sudog结构对象
+      // 由于当前没有接收者，所以需要将当前的发送者给暂存起来，等待有接收者时被唤醒。
+      // 当前阻塞的goroutine会被保存在sudog的结构体对象中
+		mysg := acquireSudog()
+      mysg.releasetime = 0
+      
+      // 保存发送的数据
+      mysg.elem = ep
+      // sudog的等待队列（waiting list）
+		mysg.waitlink = nil
+      // 发送者协程的等待队列（waiting list）
+      // TODO(zy):该waiting和上面的waitlink的工作状态细节是什么？
+      gp.waiting = mysg
+      // 发送者goroutine作为sudog的成员
+		mysg.g = gp
+      mysg.selectdone = nil
+      // 没有唤醒时的参数
+      gp.param = nil
+
+      // 入队到channel的发送者队列中
+      c.sendq.enqueue(mysg)
+      // 阻塞当前发送者goroutine。将当前的goroutine切换到waiting状态，并且释放c.lock锁。
+      // traceEvGoBlockSend = 22 // goroutine blocks on chan send [timestamp, stack]
+		goparkunlock(&c.lock, "chan send", traceEvGoBlockSend, 3)
+
+      // zy: 上一行的goparkunlock会被阻塞住，除非被对应的goready唤醒。
+      // 所以，当代码运行到这里时表示阻塞的发送者已经被唤醒，从而对应的资源需要被清理掉
+		gp.waiting = nil
+		if gp.param == nil {
+			if c.closed == 0 {
+				throw("chansend: spurious wakeup")
+			}
+			panic("send on closed channel")
+		}
+		gp.param = nil
+
+      releaseSudog(mysg)
+		return true
+	}
+
+   // 处理buffer channel
+   // ...
+}
+```
+
+总结unbuffered channel发送流程，对于下列语句：
+
+```go
+c <- 1
+```
+
+1. c为nil时，发送者的goroutine会被设置为waiting状态。
+2. c为closed时，会panic错误：send on closed channel。
+3. 尝试从c的recvq中获取一个接收者。若成功获取的话，则：
+   1. 使用syncsend将数据拷贝给接收者，并
+   2. 使用goready唤醒接收者
+4. 若没有接收者，则需要将当前发送者的goroutine阻塞。具体流程：
+   1. 将goroutine和数据打包成sudog结构体，放入sendq的队列中。
+   2. 调用goparkunlock将当前的goroutine切换到waiting状态。
