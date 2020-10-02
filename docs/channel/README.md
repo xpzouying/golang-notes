@@ -99,10 +99,10 @@ type waitq struct {
 package main
 
 func main() {
-	c1 := make(chan int, 10)
-	c2 := make(chan int)
-	_ = c1
-	_ = c2
+   c1 := make(chan int, 10)
+   c2 := make(chan int)
+   _ = c1
+   _ = c2
 }
 ```
 
@@ -151,34 +151,34 @@ go build -gcflags "-N -l -S" make_chan.go &> make_chan.s
 
 ```go
 func makechan(t *chantype, size int64) *hchan {
-	elem := t.elem
+   elem := t.elem
 
    // ...
    // 省略一些条件判断
 
-	var c *hchan
-	if elem.kind&kindNoPointers != 0 || size == 0 {
+   var c *hchan
+   if elem.kind&kindNoPointers != 0 || size == 0 {
       // 如果是unbuffer channel，则分配hchan大小的内存空间。
-		c = (*hchan)(mallocgc(hchanSize+uintptr(size)*uintptr(elem.size), nil, flagNoScan))
-		if size > 0 && elem.size != 0 {
+      c = (*hchan)(mallocgc(hchanSize+uintptr(size)*uintptr(elem.size), nil, flagNoScan))
+      if size > 0 && elem.size != 0 {
          c.buf = add(unsafe.Pointer(c), hchanSize)
-		} else {
+      } else {
          // 并让hchan中的成员buf指向内存地址自身。（该地址提供给同步操作）
-			c.buf = unsafe.Pointer(c)
-		}
-	} else {
+         c.buf = unsafe.Pointer(c)
+      }
+   } else {
       c = new(hchan)
       // buf指向环形buffer
-		c.buf = newarray(elem, uintptr(size))
+      c.buf = newarray(elem, uintptr(size))
    }
    // 元素的个数
    c.elemsize = uint16(elem.size)
    // 元素的类型
    c.elemtype = elem
    // 环形buffer的大小
-	c.dataqsiz = uint(size)
+   c.dataqsiz = uint(size)
 
-	return c
+   return c
 }
 ```
 
@@ -191,8 +191,8 @@ func makechan(t *chantype, size int64) *hchan {
 package main
 
 func main() {
-	c2 := make(chan int)
-	c2 <- 1
+   c2 := make(chan int)
+   c2 <- 1
 }
 ```
 
@@ -216,57 +216,57 @@ go build -gcflags "-N -l -S" make_chan.go &> make_chan.s
 
 ```go
 func chansend1(t *chantype, c *hchan, elem unsafe.Pointer) {
-	chansend(t, c, elem, true, getcallerpc(unsafe.Pointer(&t)))
+   chansend(t, c, elem, true, getcallerpc(unsafe.Pointer(&t)))
 }
 
 func chansend(t *chantype, c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
    // ...
 
    // 如果往nil channel中发送，则抛出unreachable的异常
-	if c == nil {
-		if !block {
-			return false
+   if c == nil {
+      if !block {
+         return false
       }
       // code src: trace.go
       // traceEvGoStop = 16 // goroutine stops (like in select{}) [timestamp, stack]
       //
       // gopark函数会将goroutine变成waiting状态并调用unlockf。
       // 如果unlockf返回false，则goroutine会被唤醒。
-		gopark(nil, nil, "chan send (nil chan)", traceEvGoStop, 2)
-		throw("unreachable")
-	}
+      gopark(nil, nil, "chan send (nil chan)", traceEvGoStop, 2)
+      throw("unreachable")
+   }
 
    // ...
 
-	lock(&c.lock)
-	if c.closed != 0 {
+   lock(&c.lock)
+   if c.closed != 0 {
       // 如果往已关闭的channel发送，则抛出异常：send on closed channel
-		unlock(&c.lock)
-		panic("send on closed channel")
-	}
+      unlock(&c.lock)
+      panic("send on closed channel")
+   }
 
    if c.dataqsiz == 0 { // 同步channel
       // 从接收队列中寻找接收者
-		sg := c.recvq.dequeue()
-		if sg != nil {
+      sg := c.recvq.dequeue()
+      if sg != nil {
          // 如果找到接收者
-			unlock(&c.lock)
+         unlock(&c.lock)
 
          recvg := sg.g
-			if sg.elem != nil {
+         if sg.elem != nil {
             // 如果接收者的data element（unsafe.Pointer类型）不为nil，
             // 则调用syncsend方法直接拷贝需要发送的元素到接收者中的sudo.elem成员。
             // 
             // TODO(zy): 在syncsend中，函数结束前会调用sg.elem = nil。
             // 也即在讲elem的数据拷贝到接收者的elem地址后，elem的地址会被置空，难道接收端有其他的地方记录该地址？
-				syncsend(c, sg, ep)
+            syncsend(c, sg, ep)
          }
          // 协程对象g 被唤醒时的参数
          recvg.param = unsafe.Pointer(sg)
 
          // 使用goready唤醒接收者的协程
-			goready(recvg, 3)
-			return true
+         goready(recvg, 3)
+         return true
       }
       
       // ...
@@ -277,18 +277,18 @@ func chansend(t *chantype, c *hchan, ep unsafe.Pointer, block bool, callerpc uin
       // 生成sudog结构对象
       // 由于当前没有接收者，所以需要将当前的发送者给暂存起来，等待有接收者时被唤醒。
       // 当前阻塞的goroutine会被保存在sudog的结构体对象中
-		mysg := acquireSudog()
+      mysg := acquireSudog()
       mysg.releasetime = 0
       
       // 保存发送的数据
       mysg.elem = ep
       // sudog的等待队列（waiting list）
-		mysg.waitlink = nil
+      mysg.waitlink = nil
       // 发送者协程的等待队列（waiting list）
       // TODO(zy):该waiting和上面的waitlink的工作状态细节是什么？
       gp.waiting = mysg
       // 发送者goroutine作为sudog的成员
-		mysg.g = gp
+      mysg.g = gp
       mysg.selectdone = nil
       // 没有唤醒时的参数
       gp.param = nil
@@ -297,22 +297,22 @@ func chansend(t *chantype, c *hchan, ep unsafe.Pointer, block bool, callerpc uin
       c.sendq.enqueue(mysg)
       // 阻塞当前发送者goroutine。将当前的goroutine切换到waiting状态，并且释放c.lock锁。
       // traceEvGoBlockSend = 22 // goroutine blocks on chan send [timestamp, stack]
-		goparkunlock(&c.lock, "chan send", traceEvGoBlockSend, 3)
+      goparkunlock(&c.lock, "chan send", traceEvGoBlockSend, 3)
 
       // zy: 上一行的goparkunlock会被阻塞住，除非被对应的goready唤醒。
       // 所以，当代码运行到这里时表示阻塞的发送者已经被唤醒，从而对应的资源需要被清理掉
-		gp.waiting = nil
-		if gp.param == nil {
-			if c.closed == 0 {
-				throw("chansend: spurious wakeup")
-			}
-			panic("send on closed channel")
-		}
-		gp.param = nil
+      gp.waiting = nil
+      if gp.param == nil {
+         if c.closed == 0 {
+            throw("chansend: spurious wakeup")
+         }
+         panic("send on closed channel")
+      }
+      gp.param = nil
 
       releaseSudog(mysg)
-		return true
-	}
+      return true
+   }
 
    // 处理buffer channel
    // ...
