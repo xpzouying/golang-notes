@@ -185,7 +185,7 @@ func makechan(t *chantype, size int64) *hchan {
 
 ## 发送数据到channel
 
-先分析`unbuffer channel`。
+**先分析`unbuffered channel`**
 
 ```go
 package main
@@ -333,3 +333,85 @@ c <- 1
 4. 若没有接收者，则需要将当前发送者的goroutine阻塞。具体流程：
    1. 将goroutine和数据打包成sudog结构体，放入sendq的队列中。
    2. 调用goparkunlock将当前的goroutine切换到waiting状态。
+
+
+**分析`buffered channel`**
+
+直接分析`chansend`函数，删除无关代码。
+
+```go
+func chansend(t *chantype, c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
+
+   // ...
+   lock(&c.lock)
+
+   // ... 省略处理unbuffered channel
+
+   // 处理buffered channel，也称为异步channel
+
+   // 如果channel的qcount>=dataqsize，即当前channel已有的数据>=长度，则一直循环判断，直到有空间可以存放。
+   for futile := byte(0); c.qcount >= c.dataqsiz; futile = traceFutileWakeup {
+      // 如果没有空间，则将发送者goroutine和发送元素封装成sudog结构体
+      gp := getg()
+      mysg := acquireSudog()
+      mysg.releasetime = 0
+      mysg.g = gp
+      mysg.elem = nil
+      mysg.selectdone = nil
+      // 将发送者sudog放入发送者队列中
+      c.sendq.enqueue(mysg)
+      // 调用goparkunlock设置goroutine为waiting状态，等待后续被唤醒
+      goparkunlock(&c.lock, "chan send", traceEvGoBlockSend|futile, 3)
+
+      // 如果阻塞的goroutine被唤醒，则继续尝试for循环
+      releaseSudog(mysg)
+      lock(&c.lock)
+      if c.closed != 0 {
+         unlock(&c.lock)
+         panic("send on closed channel")
+      }
+   }
+
+   // 此时，可以进行发送。将发送数据写入到channel的buffer中
+   typedmemmove(c.elemtype, chanbuf(c, c.sendx), ep)
+   // 发送的index递增1
+   c.sendx++
+   // 如果超出buffer长度，则置0。
+   if c.sendx == c.dataqsiz {
+      c.sendx = 0
+   }
+   // 现存的元素个数也递增1
+   c.qcount++
+
+   // 尝试唤醒一个等待的接收者
+   // 从channel的recvq获取一个接收者sg
+   sg := c.recvq.dequeue()
+
+   if sg != nil {
+      // 如果成功获取到接收者，则使用goready唤醒
+      recvg := sg.g
+      unlock(&c.lock)
+      // goready是将g的状态从waiting修改为runnable
+      goready(recvg, 3)
+   } else {
+      // 如果没有获取到接收者，则直接结束
+      unlock(&c.lock)
+   }
+
+   return true
+}
+```
+
+总结：
+
+1. 判断channel buffer是否有空间存放发送者的数据。
+2. 如果没有空间，则：
+   1. 封装发送者goroutine和数据为sudog结构体，并放入`sendq`发送者等待队列中。
+   2. 调用`goparkunlock`，将发送者协程转换为`waiting`状态，等待唤醒尝试。
+   3. 若当前阻塞的协程被其他协程唤醒，则再次判断是否有空间存放元素。若依旧没有空间，则重复2.1。若有空间，则继续步骤3。
+3. 将发送的数据写入buffer，并：
+   1. sendx累加1，表示发送元素的index后移。
+   2. qcount累加1，表示buffer中的元素总数增加。
+4. 尝试从`recvq`中唤醒一个接收者。
+   1. 如果有接收者，则使用`goready`唤醒。结束。
+   2. 如果没有接收者，直接结束。
