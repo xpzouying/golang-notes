@@ -415,3 +415,13 @@ func chansend(t *chantype, c *hchan, ep unsafe.Pointer, block bool, callerpc uin
 4. 尝试从`recvq`中唤醒一个接收者。
    1. 如果有接收者，则使用`goready`唤醒。结束。
    2. 如果没有接收者，直接结束。
+
+
+
+## 接收channel数据
+
+生成Go汇编，（在此不重复），`<-ch`语句会被转换为：`runtime/chan.go`中的函数：`func chanrecv(t *chantype, c *hchan, ep unsafe.Pointer, block bool) (selected, received bool)`，包含两个返回值：
+
+1. 返回数据，true
+2. 如果是被关闭的channel，则返回：0值（nil，0，false等等），false。
+
