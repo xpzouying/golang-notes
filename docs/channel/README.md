@@ -541,66 +541,66 @@ func chanrecv(t *chantype, c *hchan, ep unsafe.Pointer, block bool) (selected, r
 func chanrecv(t *chantype, c *hchan, ep unsafe.Pointer, block bool) (selected, received bool) {
    // 处理unbuffered channel，省略
 
-	// --- 处理buffered channel ---
+   // --- 处理buffered channel ---
    // 如果buffer没有数据，则一直等待数据
-	for futile := byte(0); c.qcount <= 0; futile = traceFutileWakeup {
+   for futile := byte(0); c.qcount <= 0; futile = traceFutileWakeup {
       if c.closed != 0 {
          // 如果channel被关闭，则从closed channel中获取0值。
-			selected, received = recvclosed(c, ep)
-			return
-		}
+         selected, received = recvclosed(c, ep)
+         return
+      }
 
-		// 接收者协程封装成sudog对象
-		gp := getg()
-		mysg := acquireSudog()
-		mysg.releasetime = 0
-		mysg.elem = nil
-		mysg.g = gp
-		mysg.selectdone = nil
+      // 接收者协程封装成sudog对象
+      gp := getg()
+      mysg := acquireSudog()
+      mysg.releasetime = 0
+      mysg.elem = nil
+      mysg.g = gp
+      mysg.selectdone = nil
 
       // 将sudog对象放入recvq中
       c.recvq.enqueue(mysg)
    
       // 调用goparkunlock阻塞接收者协程，置为waiting状态，等待被唤醒
-		goparkunlock(&c.lock, "chan receive", traceEvGoBlockRecv|futile, 3)
+      goparkunlock(&c.lock, "chan receive", traceEvGoBlockRecv|futile, 3)
 
-		// 若能到此，表示被唤醒，重新尝试for判断条件，看看是否有数据
-		releaseSudog(mysg)
-		lock(&c.lock)
-	}
+      // 若能到此，表示被唤醒，重新尝试for判断条件，看看是否有数据
+      releaseSudog(mysg)
+      lock(&c.lock)
+   }
 
    // 若能到此，表示有数据接收
    // 拷贝数据从buffer到接收者的数据地址
-	if ep != nil {
-		typedmemmove(c.elemtype, ep, chanbuf(c, c.recvx))
-	}
-	memclr(chanbuf(c, c.recvx), uintptr(c.elemsize))
+   if ep != nil {
+      typedmemmove(c.elemtype, ep, chanbuf(c, c.recvx))
+   }
+   memclr(chanbuf(c, c.recvx), uintptr(c.elemsize))
 
    // 更新循环buffer的接收index
-	c.recvx++
-	if c.recvx == c.dataqsiz {
-		c.recvx = 0
+   c.recvx++
+   if c.recvx == c.dataqsiz {
+      c.recvx = 0
    }
    // 更新buffer中的数据个数
-	c.qcount--
+   c.qcount--
 
    // 由于接收者从buffer中拿掉（消费掉）一个数据，所以尝试唤醒一个被阻塞的发送者协程
    // 从sendq队列中尝试获取一个被阻塞的发送者
    sg := c.sendq.dequeue()
-	if sg != nil {
+   if sg != nil {
       // 如果成功获取到发送者
-		gp := sg.g
-		unlock(&c.lock)
-		// 使用goready唤醒发送者协程，设置为runnable状态
-		goready(gp, 3)
-	} else {
+      gp := sg.g
+      unlock(&c.lock)
+      // 使用goready唤醒发送者协程，设置为runnable状态
+      goready(gp, 3)
+   } else {
       // 如果之前没有被阻塞的发送者，则直接结束
-		unlock(&c.lock)
-	}
+      unlock(&c.lock)
+   }
 
-	selected = true
-	received = true
-	return
+   selected = true
+   received = true
+   return
 }
 ```
 
