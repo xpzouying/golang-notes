@@ -425,3 +425,109 @@ func chansend(t *chantype, c *hchan, ep unsafe.Pointer, block bool, callerpc uin
 1. 返回数据，true
 2. 如果是被关闭的channel，则返回：0值（nil，0，false等等），false。
 
+分析流程还是和接收数据的方式一致，分别按照unbuffered和buffered。
+
+**1、从unbuffered channel获取数据**
+
+```go
+// block总是为true
+func chanrecv(t *chantype, c *hchan, ep unsafe.Pointer, block bool) (selected, received bool) {
+   if c == nil {
+      // 如果channel为nil，则goroutine会被设置为waiting状态，放入等待队列中。
+      // 会被系统检测协程检测到永远不会被唤醒，从而导致deadlock的错误。
+      gopark(nil, nil, "chan receive (nil chan)", traceEvGoStop, 2)
+      throw("unreachable")
+   }
+
+   if !block && (c.dataqsiz == 0 && c.sendq.first == nil ||
+      c.dataqsiz > 0 && atomicloaduint(&c.qcount) == 0) &&
+      atomicload(&c.closed) == 0 {
+      return
+   }
+
+   lock(&c.lock)  // 保护channel的状态
+   if c.dataqsiz == 0 {  // unbuffered channel，即同步channel
+      if c.closed != 0 {
+         // 如果是从已经关闭（closed）的channel中获取数据，返回。第2个值总是0值。
+         return recvclosed(c, ep)
+      }
+
+      // 从sendq（发送者阻塞队列）中获取一个发送者
+      // 由于是unbuffered channel，数据不会保存在channel buffer中，
+      // 所以如果需要获取数据的话，必然是从发送者的sudog中获取到。
+      sg := c.sendq.dequeue()
+      if sg != nil { // 1、如果获取的一个发送者
+         unlock(&c.lock)
+
+         if ep != nil {
+            // 将发送者的数据拷贝出来
+            typedmemmove(c.elemtype, ep, sg.elem)
+         }
+         
+         // 置空发送者的elem。
+         // （zy：为了发送者更好的GC，还是为了发送者做进一步的判断？）
+         sg.elem = nil
+         gp := sg.g
+         gp.param = unsafe.Pointer(sg)  // 切换goroutine时的参数
+         goready(gp, 3)  // 使用goready将发送者阻塞的协程置成runnable状态，等待重新被调度。
+         selected = true
+         received = true
+         return
+      }
+      
+      // 2、如果没有发送者。我们需要阻塞当前接收者协程。
+      // zy：与前面发送者类似，会封装成sudog结构体，放入接收者阻塞队列中，即recvq中。
+      gp := getg()  // 获取接收者协程
+      // 开始封装sudog
+      mysg := acquireSudog()
+      mysg.releasetime = 0
+      mysg.elem = ep  // 接收者的数据地址
+      mysg.waitlink = nil
+      gp.waiting = mysg
+      mysg.g = gp
+      mysg.selectdone = nil
+      gp.param = nil
+      c.recvq.enqueue(mysg)  // 放入recvq中
+      
+      // 调用goparkunlock，阻塞当前接收者协程。设置状态为waiting。
+      goparkunlock(&c.lock, "chan receive", traceEvGoBlockRecv, 3)
+
+      
+      // 若能到此，表示接收者协程被某个发送者唤醒
+      if mysg != gp.waiting {
+         throw("G waiting list is corrupted!")
+      }
+      gp.waiting = nil
+      haveData := gp.param != nil
+      gp.param = nil
+      releaseSudog(mysg)
+
+      // 从发送者接收到数据。已经被写入到sudo.elem（即ep地址）了。
+      if haveData {
+         selected = true
+         received = true
+         return
+      }
+
+      lock(&c.lock)
+      if c.closed == 0 {
+         throw("chanrecv: spurious wakeup")
+      }
+      return recvclosed(c, ep)
+   }
+
+   // 如果是buffered channel
+}
+```
+
+总结：
+
+1. 如果是从closed channel中接收数据，则返回接收为false。
+2. 尝试从`sendq`获取之前被阻塞的发送者。
+3. 如果有发送者协程等待发送，则：
+   1. 从发送者sudog中拷贝发送者的数据；
+   2. 调用`goready`准备唤醒发送者协程。
+4. 如果当前没有发送者协程准备好，则：
+   1. 封装接收者协程为sudog，并放入`recvq`中；
+   2. 调用`goparkunlock`将该协程置成waiting等待。
+
