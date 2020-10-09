@@ -16,3 +16,6 @@
 
 # ignore zy's file
 .DS_Store
+
+# for codespaces
+pythonenv*
