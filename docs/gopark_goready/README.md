@@ -38,3 +38,30 @@
    - PC信息
 3. 将当前g放置到对应的队列中，等待时机。
 
+
+
+---
+
+## 备注笔记
+
+1. **问：** 协程调度器在调度（`schedule`）时，如何从一个Goroutine切换到另外一个Goroutine运行？
+
+**答：** 
+
+理论上来说，对于程序运行时来说，进程/线程/协程都是一段指令代码，程序运行的过程就是CPU顺序执行指令的过程。
+
+CPU具体执行那一条指令，取决于`PC寄存器`，所以想要运行另一个Goroutine的话，只需要把`PC寄存器`设置为新的Goroutine的指令地址后即可。
+
+那么，实际上Go是如何实现的呢？在[execute()](https://github.com/golang/go/blob/release-branch.go1.5/src/runtime/proc1.go#L1336)函数中，运行新的Goroutine时，会调用[gogo(&gp.sched)](https://github.com/golang/go/blob/release-branch.go1.5/src/runtime/proc1.go#L1380)函数做切换。
+
+对于[gogo](https://github.com/golang/go/blob/release-branch.go1.5/src/runtime/asm_amd64.s#L158)函数是汇编实现。
+
+```
+TEXT runtime·gogo(SB), NOSPLIT, $0-8
+   // 省略其他代码
+
+   MOVQ	gobuf_pc(BX), BX  // 将上次保存的PC地址读取出来
+   JMP	BX                // 跳转到上次保留的PC地址
+```
+
+通过更新`PC寄存器`，然后跳转到对应的地址，即可实现Goroutine的切换。
