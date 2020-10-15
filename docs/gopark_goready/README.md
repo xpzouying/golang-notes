@@ -39,6 +39,43 @@
 3. 将当前g放置到对应的队列中，等待时机。
 
 
+[gogo](https://github.com/golang/go/blob/a1ef950a15517bca223d079a6cf65948c3db9694/src/runtime/asm_amd64.s#L158)关键代码的解析。
+
+从gogo函数的注释可以看到该函数的作用是从`Gobuf`中恢复状态。该`Gobuf`是指的是：[gogo(&gp.sched)](https://github.com/golang/go/blob/a1ef950a15517bca223d079a6cf65948c3db9694/src/runtime/proc1.go#L1380)调用将要运行的`gp`的`sched`信息，主要是保存栈、pc等信息。
+
+
+
+```
+// void gogo(Gobuf*)
+// restore state from Gobuf; longjmp
+TEXT runtime·gogo(SB), NOSPLIT, $0-8
+   MOVQ	buf+0(FP), BX		// gobuf
+   MOVQ	gobuf_g(BX), DX
+   MOVQ	0(DX), CX		// make sure g != nil
+
+   // 获取TLS变量
+   get_tls(CX)
+
+   // 设置gobuf中的g到TLS中，即指定将要运行的新g为TLS保存的g。
+   MOVQ	DX, g(CX)
+
+   // 恢复寄存器信息
+   MOVQ	gobuf_sp(BX), SP	// restore SP
+   MOVQ	gobuf_ret(BX), AX
+   MOVQ	gobuf_ctxt(BX), DX
+   MOVQ	gobuf_bp(BX), BP
+
+   // 清空不需要的数据
+   MOVQ	$0, gobuf_sp(BX)	// clear to help garbage collector
+   MOVQ	$0, gobuf_ret(BX)
+   MOVQ	$0, gobuf_ctxt(BX)
+   MOVQ	$0, gobuf_bp(BX)
+
+   // 更新pc，即准备跳转到新的g的代码运行
+   MOVQ	gobuf_pc(BX), BX
+   JMP	BX
+```
+
 
 ---
 
