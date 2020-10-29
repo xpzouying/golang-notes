@@ -1,0 +1,24 @@
+info:
+  contact:
+    email: xpzouying@gmail.com
+    name: zy
+    url: https://zouying.world
+  description: 你好，我是zy。这里是我的swagger demo文档
+  title: zy的swagger测试用例
+  version: "0.1"
+paths:
+  /hello/{name}:
+    get:
+      consumes:
+      - text/plain
+      description: 入口接口
+      parameters:
+      - description: 用户名
+        in: path
+        name: name
+        required: true
+        type: string
+      produces:
+      - text/plain
+      summary: 处理测试业务逻辑
+swagger: "2.0"
