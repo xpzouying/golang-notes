@@ -16,4 +16,6 @@
    ```bash
    go run .
    ```
-3. 打开swagger API接口文档：[swagger index](http://zydev:8080/swagger/index.html)
+3. 打开swagger API接口文档：http://localhost:8080/swagger/index.html
+
+![swagger dashboard](https://user-images.githubusercontent.com/3946563/97587203-181c5c00-1a36-11eb-8a1c-72be77de82be.png)
