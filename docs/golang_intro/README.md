@@ -58,7 +58,25 @@ go version
 
 ## 2、编译环境
 
-TODO
+个人常用[vscode](https://code.visualstudio.com/)写代码，所以就围绕vscode介绍我的开发环境。
+
+2.1、vscode下载安装：[官网下载](https://code.visualstudio.com/)
+
+2.2、vscode插件推荐：
+  - [vscode-go](https://marketplace.visualstudio.com/items?itemName=golang.go)：Golang支持
+  - [GitLens](https://marketplace.visualstudio.com/items?itemName=eamodio.gitlens)
+  - [Path Intellisense](https://marketplace.visualstudio.com/items?itemName=christian-kohler.path-intellisense)：更好的路径补全
+
+2.3、vscode配置：
+
+安装完`vscode-go`后，Mac下面按`Shife+Command+P`，输入`Go Install`进行搜索，选择`Go: Install/Update Tools`进行Go Tools安装，
+
+![](vscode_install_go_tools.jpg)
+
+勾选全部，安装所有的插件。
+
+![](install_all.jpg)
+
 
 ## 3、代码开发
 
