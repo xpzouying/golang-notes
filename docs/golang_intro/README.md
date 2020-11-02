@@ -91,7 +91,24 @@ go version
 
 ## 3、代码开发
 
-TODO
+编辑文件，`main.go`。
+
+```go
+package main
+
+import "fmt"
+
+func main() {
+    fmt.Println("Hello, World!")
+}
+```
+
+运行：
+
+```bash
+go run main.go
+# Hello, World!
+```
 
 - [Golang Getting Started](https://golang.org/doc/tutorial/getting-started)
 
