@@ -86,7 +86,7 @@ go version
 
 1. vim/emacs流派：直接使用神器搞定所有问题。
 1. 使用sftp/rsync之类的插件：[vscode sftp](https://marketplace.visualstudio.com/items?itemName=liximomo.sftp)：该类插件的原理是会把远程服务器上的代码都使用rsync之类的工具同步到本机，当本机的文件被修改后，自动使用rsync又同步到远程服务器。这种模式的主要缺点是本机和远程同时会有两份数据。
-1. 使用[remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)插件。推荐使用该插件，该插件的原理是在远程服务器上直接启动一个服务，vscode中直接编辑远程服务器的文件，本机不需要再存在副本。
+1. `vscode`使用[remote - SSH](https://marketplace.visualstudio.com/items?itemName=ms-vscode-remote.remote-ssh)插件。推荐使用该插件，该插件的原理是在远程服务器上直接启动一个服务，vscode中直接编辑远程服务器的文件，本机不需要再存在副本。
 
 
 ## 3、代码开发
