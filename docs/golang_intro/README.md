@@ -112,3 +112,7 @@ go run main.go
 
 - [Golang Getting Started](https://golang.org/doc/tutorial/getting-started)
 
+
+## 4、代码规范
+
+- [Go 面向包的设计和架构分层](https://github.com/danceyoung/paper-code/blob/master/package-oriented-design/packageorienteddesign.md)
