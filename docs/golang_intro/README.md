@@ -113,6 +113,24 @@ go run main.go
 - [Golang Getting Started](https://golang.org/doc/tutorial/getting-started)
 
 
-## 4、代码规范
+## 4、国内源环境配置
+
+Golang 1.13及更高版本推荐配置
+
+```bash
+go env -w GO111MODULE=on
+go env -w GOPROXY=https://goproxy.cn,direct
+```
+
+或者写入到环境变量中
+
+```bash
+echo "export GO111MODULE=on" >> ~/.profile
+echo "export GOPROXY=https://goproxy.cn" >> ~/.profile
+source ~/.profile
+```
+
+
+## 5、代码规范
 
 - [Go 面向包的设计和架构分层](https://github.com/danceyoung/paper-code/blob/master/package-oriented-design/packageorienteddesign.md)
