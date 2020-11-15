@@ -215,11 +215,30 @@ func TestAllInOneTable(t *testing.T) {
 
 ### 2.1、压测用例
 
-
+测试用例以`Benchmark`开始。
 
 ```go
 func BenchmarkXxx(*testing.B)
 ```
+
+运行时，执行脚本：
+
+```bash
+go test -bench=.
+```
+
+如果我们需要测试的业务代码在压测时，需要花费很长的时间准备，那么可以使用`b.ResetTimer()`。
+
+```go
+func BenchmarkBigLen(b *testing.B) {
+    big := NewBig()
+    b.ResetTimer()
+    for i := 0; i < b.N; i++ {
+        big.Len()
+    }
+}
+```
+
 
 ### 2.2、运行压测
 
@@ -240,7 +259,11 @@ go test -bench
 
 ### 3.1、表格测试法
 
+上面已提及，忽略。
+
 ### 3.2、Mockup测试
+
+TODO。
 
 ### 3.3、跳过单元测试
 
@@ -276,6 +299,23 @@ ok      github.com/xpzouying/golang-notes/docs/go_testing/demo/3_more_testing   
 ```
 
 
+### 3.4、测试辅助工具
+
+
+**testify：断言**
+
+代码判断简洁明了。
+
+```go
+import "github.com/stretchr/testify/assert"
+
+func TestDiv(t *testing.T) {
+	res, err := div(8, 4)
+	want := 2
+	assert.NoError(t, err)
+	assert.Equal(t, want, res)
+}
+```
 
 ## 参考资料
 
@@ -283,3 +323,4 @@ ok      github.com/xpzouying/golang-notes/docs/go_testing/demo/3_more_testing   
 - [Go By Example: Testing](https://gobyexample.com/testing)
 - [golang cover](https://blog.golang.org/cover)
 - [GoConvey TDD工具](http://goconvey.co/)
+- [github.com/stretchr/testify](github.com/stretchr/testify)
