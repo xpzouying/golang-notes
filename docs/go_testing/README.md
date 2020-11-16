@@ -225,6 +225,8 @@ func BenchmarkXxx(*testing.B)
 
 ```bash
 go test -bench=.
+
+go test -bench -count=1 -v .
 ```
 
 如果我们需要测试的业务代码在压测时，需要花费很长的时间准备，那么可以使用`b.ResetTimer()`。

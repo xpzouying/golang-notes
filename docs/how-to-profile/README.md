@@ -59,3 +59,31 @@
 
 更详细的可以参考：
 - [https://blog.golang.org/pprof](https://blog.golang.org/pprof)
+- [how to profile](https://github.com/talkgo/night/blob/master/content/articles/how_to_profile/how_to_profile.md)
+
+
+## 测试
+
+
+使用工具[hey](https://github.com/rakyll/hey)。
+
+```bash
+hey -c 10 "http://localhost:8080/hello?name=zy"
+```
+
+
+```
+➜  demo (master) ✗ go run main.go
+fatal error: concurrent map writes
+
+goroutine 14 [running]:
+runtime.throw(0x6ba6e2, 0x15)
+        /usr/local/go/src/runtime/panic.go:1116 +0x72 fp=0xc000159a08 sp=0xc0001599d8 pc=0x4371f2
+runtime.mapassign_faststr(0x670220, 0xc000078c30, 0xc0000168d0, 0x2, 0x2)
+        /usr/local/go/src/runtime/map_faststr.go:211 +0x3f1 fp=0xc000159a70 sp=0xc000159a08 pc=0x415bf1
+main.handleHello(0x70dae0, 0xc00013d7a0, 0xc000236200)
+        /home/zouying/GOPATH/src/github.com/xpzouying/golang-notes/docs/how-to-profile/demo/main.go:18 +0x8f fp=0xc000159b68 sp=0xc000159a70 pc=0x642aef
+net/http.HandlerFunc.ServeHTTP(0x6ccd20, 0x70dae0, 0xc00013d7a0, 0xc000236200)
+        /usr/local/go/src/net/http/server.go:2042 +0x44 fp=0xc000159b90 sp=0xc000159b68 pc=0x629024
+net/http.(*ServeMux).ServeHTTP(0x87c9a0, 0x70dae0, 0xc00013d7a0, 0xc000236200)
+```
