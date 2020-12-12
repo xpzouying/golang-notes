@@ -3,6 +3,8 @@ package main
 import (
 	"log"
 	"sync"
+
+	"github.com/pkg/profile"
 )
 
 func seq() {
@@ -14,6 +16,31 @@ func seq() {
 		}
 	}
 
+	log.Printf("count=%v", count)
+}
+
+func seq2() {
+	count := 0.
+	mu := new(sync.Mutex)
+
+	wg := new(sync.WaitGroup)
+
+	for i := 0.; i < 100.; i += 0.2 {
+		i := i
+		for j := 204.; j > 0; j -= 0.2 {
+			j := j
+			wg.Add(1)
+			go func() {
+				mu.Lock()
+				count += (i*i - j*j + i*j)
+				mu.Unlock()
+
+				wg.Done()
+			}()
+		}
+	}
+
+	wg.Wait()
 	log.Printf("count=%v", count)
 }
 
@@ -32,6 +59,7 @@ func seq3() {
 
 		go func() {
 			subCount := 0.
+
 			for j := 20480.; j > 0; j -= 0.2 {
 
 				subCount += (i*i - j*j + i*j)
@@ -51,7 +79,6 @@ func seq3() {
 }
 
 func handleByWorkers() {
-
 	// 用来接收i
 	ch := make(chan float64, 100)
 
@@ -105,8 +132,13 @@ func handleByWorkers() {
 }
 
 func main() {
-	// defer profile.Start(profile.TraceProfile).Stop()
+	defer profile.Start(profile.TraceProfile).Stop()
 
+	// seq()
+
+	// seq2()
+
+	// seq3()
 	// seq3()
 
 	handleByWorkers()
