@@ -1,12 +1,24 @@
 package main
 
-import "log"
+import (
+	"errors"
+	"log"
+)
 
-func Mod(value, m int) int {
+func Mod(value, m int) (int, error) {
 
-	return int(value % m)
+	if m == 0 {
+		return 0, errors.New("divide zero")
+	}
+
+	return int(value % m), nil
 }
 
 func main() {
-	log.Println(Mod(5, 3))
+	got, err := Mod(5, 3)
+	if err != nil {
+		log.Println("Mod failed, divide zeror")
+	}
+
+	log.Println(got)
 }
