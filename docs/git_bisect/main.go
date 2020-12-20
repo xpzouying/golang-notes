@@ -11,7 +11,7 @@ func Mod(value, m int) (int, error) {
 		return 0, errors.New("divide zero")
 	}
 
-	return int(value % m), nil
+	return int(value%m) + 1, nil
 }
 
 func main() {
