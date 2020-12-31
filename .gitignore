@@ -20,3 +20,7 @@
 # for codespaces
 pythonenv*
 .idea/
+
+
+# zouying
+**/prometheus/prometheus.yml
