@@ -161,6 +161,12 @@ curl http://localhost:11024/metrics
 
 ## 配置Grafana
 
+浏览器打开Grafana的地址：
+
+```
+http://localhost:3000
+```
+
 1、添加`DATA SOURCES` - `Prometheus`
 
 - Name - 起个名字，Memory
