@@ -194,3 +194,6 @@ http://localhost:3000
 `Query` --> 选项中选择： `Metrics` --> `memory_percent`
 
 
+3、示例
+
+![Prometheus+Grafana](./prometheus_grafana_demo.jpg)
