@@ -12,3 +12,10 @@ scrape_configs:
       - targets:
           - 'prometheus:9090'
           - 'idonotexists:564'
+
+  - job_name: 'zydev_memory'
+
+    scrape_interval: 5s
+
+    static_configs:
+      - targets: ['192.168.50.140:11024']
