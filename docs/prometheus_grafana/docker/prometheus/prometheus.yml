@@ -13,7 +13,7 @@ scrape_configs:
           - 'prometheus:9090'
           - 'idonotexists:564'
 
-  - job_name: 'zydev_memory'
+  - job_name: 'zydev_metrics'
 
     scrape_interval: 5s
 

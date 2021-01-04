@@ -26,13 +26,17 @@ scrape_configs:
           - 'prometheus:9090'
           - 'idonotexists:564'
 
-  - job_name: 'zydev_memory'
+  - job_name: 'prometheus_demo'
 
     scrape_interval: 5s
 
     static_configs:
       - targets: ['192.168.50.140:11024']
 ```
+
+**说明：**
+
+`job_name`中的`targets`指定去哪个地址取`/metrics`数据。
 
 
 ```bash
