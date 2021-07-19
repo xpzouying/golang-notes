@@ -17,13 +17,8 @@ func bar() error {
 
 func main() {
 	err := bar()
+	log.Printf("error: %v", err)
+
 	log.Printf("errors.Is: %v", errors.Is(err, sql.ErrNoRows))
-	// if errors.Cause(err) == sql.ErrNoRows {
-	// 	fmt.Printf("data not found, %v\n", err)
-	// 	fmt.Printf("%+v\n", err)
-	// 	return
-	// }
-	// if err != nil {
-	// 	// unknown error
-	// }
+	log.Printf("errors.Cause: %v", errors.Cause(err))
 }
