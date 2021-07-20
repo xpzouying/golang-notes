@@ -3,7 +3,7 @@ module github.com/xpzouying/golang-notes
 go 1.15
 
 require (
-	github.com/gin-gonic/gin v1.6.3
+	github.com/gin-gonic/gin v1.7.2
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pkg/profile v1.5.0
 	github.com/prometheus/client_golang v1.9.0
