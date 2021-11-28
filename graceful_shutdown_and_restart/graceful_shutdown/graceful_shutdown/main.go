@@ -24,7 +24,11 @@ func main() {
 		Handler: nil,
 	}
 	go func() {
-		log.Println(server.ListenAndServe())
+		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Fatalf("http server exit: %v", err)
+		} else {
+			log.Printf("http server exit succ: %t", err)
+		}
 	}()
 
 	// 等待接收信号
