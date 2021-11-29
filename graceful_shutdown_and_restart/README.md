@@ -234,3 +234,18 @@ curl http://localhost:8080
 1. 不等request1请求返回时，发送request2。
 
 按照预期为：server2应该处理request2，并且server1处理完request1后，会正常退出。
+
+### 测试
+
+```bash
+# 准备2个server：server1，server2
+go build -o server1 .
+go build -o server2 .
+
+# 运行测试脚本
+bash ./test.sh
+# hello world, from pid=46561
+# hello world, from pid=46574
+```
+
+符合之前的预期✌️。
