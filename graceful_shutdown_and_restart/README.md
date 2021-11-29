@@ -14,7 +14,7 @@
 
 为了手动模拟现实情况，在HTTP处理函数中插入了3秒接口处理耗时。
 
-代码在：`graceful_shutdown/1_normal_server/`目录下。
+代码在：`./1_normal_server/`目录下。
 
 ```go
 func main() {
@@ -85,7 +85,7 @@ func ListenAndServe(addr string, handler Handler) error {
 }
 ```
 
-改动后的代码在`./graceful_shutdown/2_graceful_shutdown/main.go`。
+改动后的代码在`./2_graceful_shutdown/main.go`。
 
 代码解读：
 
