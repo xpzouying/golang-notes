@@ -189,3 +189,48 @@ curl http://localhost:8080
 
 > 端口复用参数的详细说明：[SO_REUSEPORT (since Linux 3.9)](https://man7.org/linux/man-pages/man7/socket.7.html)
 
+
+### 实现
+
+在这里不讨论端口复用的具体实现，直接使用现有的第三方库[https://github.com/libp2p/go-reuseport](https://github.com/libp2p/go-reuseport)。
+
+启动两个程序。
+
+```bash
+# server1
+go run .
+
+# server2
+go run .
+```
+
+检查监听在`:8080`端口上的程序。此时会发现有2个程序监听在同样的端口上。进程ID分别是：43742，43812。
+
+```bash
+lsof -i :8080
+# COMMAND     PID USER   FD   TYPE             DEVICE SIZE/OFF NODE NAME
+# graceful_ 44426   zy    5u  IPv6 0x43078155d21877bb      0t0  TCP *:http-alt (LISTEN)
+# graceful_ 44444   zy    5u  IPv6 0x43078155d2184e7b      0t0  TCP *:http-alt (LISTEN)
+```
+
+发送请求，如同预期一样，都会发送到第一个进程进行处理。
+
+```bash
+# request1
+curl http://localhost:8080
+# hello world, from pid=44426
+
+# request2
+curl http://localhost:8080
+# hello world, from pid=44426
+```
+
+此时，模拟重启情景。
+
+1. 发送request1。
+
+1. 不等request1请求返回时，关闭server1。
+
+1. 不等request1请求返回时，发送request2。
+
+按照预期为：server2应该处理request2，并且server1处理完request1后，会正常退出。
