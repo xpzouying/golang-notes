@@ -127,14 +127,65 @@ func main() {
 
 3. 等待所有的连接变为空闲（idle）状态。
 
-4. 关闭服务。
+4. 关闭http服务。
+
+![graceful-shutdown](./assets/graceful_shutdown.jpg)
+
 
 点击展开[官方示例](https://pkg.go.dev/net/http#example-Server.Shutdown)。
 
-> 注意⚠️
+> ⚠️注意
 >
 > `log.Println(server.ListenAndServe())`中日志输出函数不能换成：`log.Fatal`。
 > 否则，会立刻退出。目前还不知道为什么会导致这个问题。看了Fatal函数的实现，只有一个差别，
 > 多了个`os.Exit(1)`。
 >
 > 猜测：在`os.Exit(1)`中，可能触发了强制退出的某种行为。
+
+
+## 优雅重启
+
+完成优雅退出后，更进一步，还有一些真实的场景满足不了。在调用`Shutdown`方法后，http server会关闭所有监听，也就表示在上面示例中，此时再有新的请求（假设为request2）到`:8080`，会报错。
+
+```bash
+curl http://localhost:8080
+# curl: (7) Failed to connect to localhost port 8080: Connection refused
+```
+
+虽然此时整个程序还没有退出（还在处理第一次请求），但是http server已经关闭了所有的监听，不在接收新的请求了。
+
+在现实的情况下，常常会遇到这个问题。比如在做CI/CD上线时，旧的服务在退出时，此时线上若是有请求过来后，我们希望同时满足：
+
+1. 老的服务能够处理完之前的请求；
+
+2. 新的服务能够处理新的请求；
+
+
+### 思路 - 端口复用
+
+如何能同时满足上面2个条件，
+
+1. 使用之前的优雅退出方案能够解决第一个问题；
+
+2. 加入端口复用，将新的请求发送给新服务处理；
+
+详细的流程如下：
+
+假设之前的老服务为server1，新服务名字为server2。
+
+1. 启动server1，监听在`:8080`端口上。
+
+1. 启动server2。使用端口复用，同样会监听在`:8080`端口上。
+
+1. 虽然server1和server2都监听在同样的端口。但是由于server1先进行监听，此时过来的请求request1会交给server1处理。
+
+1. server1按照之前的流程进行优雅退出；此时，server1会关闭对于`:8080`端口的监听，由于request1仍然在处理中，所以server1的进程还未关闭。
+
+1. 新的请求request2过来，由于上一步中server1已经关闭了对于端口的监听，所以会交给server2进行处理。
+
+1. server1处理完request1后退出进程。
+
+有上面的过程就完成了整个服务的优雅重启的流程。
+
+> 端口复用参数的详细说明：[SO_REUSEPORT (since Linux 3.9)](https://man7.org/linux/man-pages/man7/socket.7.html)
+
