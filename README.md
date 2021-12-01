@@ -3,6 +3,18 @@
 这里记录着我的Golang笔记和思考。
 
 
+## 记录
+
+- [HTTP服务如何优雅退出和重启](./graceful_shutdown_and_restart/README.md)
+
+
+## Todos
+
+- Raft的实现
+
+- WAL的实现
+
+
 ## 如何使用
 
 1. 打开[Issues](https://github.com/xpzouying/golang-notes/issues)可以查看所有的笔记。可以搜索相关问题，或使用`Labels`查看某类问题。
