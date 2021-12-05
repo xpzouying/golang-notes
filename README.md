@@ -38,3 +38,8 @@
 原本，准备完全围绕`Golang`语言自身展开，但是最近想提升自身的架构能力，所以想研究更高、更广层面的内容，比如现在很火的docker、k8s，还有一些中间件，比如对象存储、消息队列，或者一些协议，比如raft等等。
 
 因此，接下来的笔记不光是记录Golang语言自身，还会涉及到Go生态的其他内容。
+
+
+## 感谢
+
+- [7days-golang](https://github.com/geektutu/7days-golang) - 该仓库的学习榜样[geektutu](https://geektutu.com/post/gee.html)。另外，也感谢他分享的`微习惯`养成思维。
