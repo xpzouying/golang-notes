@@ -152,3 +152,70 @@ func WithTimeUsed(next Endpoint) Endpoint {
 ```
 
 但是，上面有个问题，就是比如我们依赖其他的组件，比如我们依赖一个自定义的`log.Logger`组件，那么这种方式就不是太合适。
+
+
+## 3-metrics
+
+这一示例中，我们增加`[prometheus](https://github.com/prometheus/client_golang/)`组件，进行metrics统计。
+
+首先，按照[官方示例simple/main.go](https://github.com/prometheus/client_golang/blob/master/examples/simple/main.go)
+将`prometheus`默认的功能加入进来。
+
+```go
+func NewPromHTTPHandler() http.Handler {
+	return promhttp.Handler()
+}
+```
+
+在`main.go`中增加`/metrics`接口，
+
+```go
+http.Handle("/metrics", zykit.NewPromHTTPHandler())
+```
+
+运行服务，
+
+```bash
+cd ./3-metrics
+go run .
+```
+
+发起请求，
+
+```bash
+curl -XPOST -d '{"s": "ZouYing"}'  http://localhost:8080/upper
+# "ZOUYING"
+
+curl -XPOST -d '{"s": "ZouYing"}'  http://localhost:8080/count
+# 7
+```
+
+打开浏览器：`localhost:8080/metrics`，可以看到默认的统计数据。
+
+```
+# HELP go_gc_duration_seconds A summary of the pause duration of garbage collection cycles.
+# TYPE go_gc_duration_seconds summary
+go_gc_duration_seconds{quantile="0"} 0
+go_gc_duration_seconds{quantile="0.25"} 0
+go_gc_duration_seconds{quantile="0.5"} 0
+go_gc_duration_seconds{quantile="0.75"} 0
+go_gc_duration_seconds{quantile="1"} 0
+go_gc_duration_seconds_sum 0
+go_gc_duration_seconds_count 0
+# HELP go_goroutines Number of goroutines that currently exist.
+# TYPE go_goroutines gauge
+go_goroutines 7
+# HELP go_info Information about the Go environment.
+# TYPE go_info gauge
+go_info{version="go1.17.4"} 1
+# HELP go_memstats_alloc_bytes Number of bytes allocated and still in use.
+# TYPE go_memstats_alloc_bytes gauge
+go_memstats_alloc_bytes 2.444808e+06
+...
+...
+# HELP promhttp_metric_handler_requests_total Total number of scrapes by HTTP status code.
+# TYPE promhttp_metric_handler_requests_total counter
+promhttp_metric_handler_requests_total{code="200"} 2
+promhttp_metric_handler_requests_total{code="500"} 0
+promhttp_metric_handler_requests_total{code="503"} 0
+```
