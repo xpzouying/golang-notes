@@ -56,3 +56,64 @@ go run .
 curl -XPOST -d '{"s": "ZouYing"}'  http://localhost:8080/upper
 # "ZOUYING"
 ```
+
+
+## 2-middleware
+
+非框架实现的方式。
+
+我们创建一个`struct`，里面实现`Service interface`的方法。
+
+```go
+type TimeUsedMiddleware struct {
+	next StringService
+}
+
+func (mw *TimeUsedMiddleware) Upper(s string) (res string) {
+	defer func(begin time.Time) {
+		log.Printf("time_used: %s", time.Since(begin))
+
+	}(time.Now())
+
+	return mw.next.Upper(s)
+}
+```
+
+调用时，`svr`变量一直时`Service interface`的类型，所以我们在封装时，只需要实现接口对应的方法即可。
+
+
+```go
+var svr StringService
+{
+    // 核心的service
+    svr = &simpleStringServer{}
+
+    // 封装中间件
+    svr = WithTimeUsedMiddleware(svr)
+}
+```
+
+详细的示例代码在：`2-middleware`。
+
+**运行**
+
+```bash
+cd 2-middleware
+
+go run .
+# 2021/12/06 17:16:13 listen on :8080
+```
+
+**请求**
+
+```bash
+curl -XPOST -d '{"s": "ZouYing"}'  http://localhost:8080/upper
+# "ZOUYING"
+```
+
+同时，服务端会输出请求的耗时：
+
+```bash
+2021/12/06 17:16:35 simple_string_server: got=ZouYing result=ZOUYING
+2021/12/06 17:16:35 time_used: 48.25µs
+```
