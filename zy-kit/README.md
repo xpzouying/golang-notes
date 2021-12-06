@@ -26,8 +26,10 @@ Yet another [go-kit](https://github.com/go-kit/kit).
 
 1. 框架能力：
 
-    - `endpoint`支持：需要定一个`endpoint`（端点）。它的作用是，将`service`所有的API都封装，以`endpoint`的形式暴露。
-能够将HTTP的请求，转换成`service`能够处理的请求。
+    - `endpoint`支持：需要定一个`endpoint`（端点）。它的作用是：接收一个请求，解析请求参数，返回响应。
+    所以，会将`service`所有的业务公共的方法都封装，以`endpoint`的形式暴露，按照指定的`decode`对请求进行解析请求，
+    并且按照指定的`encode`进行响应的编码。
+    例如，能够将HTTP的请求，转换成json形式，转换成`service`能够处理的请求，并且以json响应返回回去。
 
     - `transport`支持：有了上面的`endpoint`，就需要定义`transport`，能够支撑我们对应的协议，比如：`http`支持、或者`grpc`等协议的支持。
 这里的主要作用是：（以http为例），能够提供`http`对应的服务、能够处理http请求、支持http请求到`endpoint`处理。
@@ -117,3 +119,36 @@ curl -XPOST -d '{"s": "ZouYing"}'  http://localhost:8080/upper
 2021/12/06 17:16:35 simple_string_server: got=ZouYing result=ZOUYING
 2021/12/06 17:16:35 time_used: 48.25µs
 ```
+
+
+## 3-middleware-2
+
+对于框架来说，Middleware的支持是必不可少的。那么，需要考虑Middleware需要封装在哪一层（如：`transport`、`endpoint`）。
+
+由于，Middleware是不受协议约束，无论是`http`还是`grpc`，都需要对服务的调用进行Middleware的封装，所以应该是在`transport`到`endpoint`之间，并且经过Middleware封装后，仍然保持原有的endpoint能力。
+
+所以，大致会得到`Middleware`的定义：
+
+```go
+type Middleware func(Endpoint) Endpoint
+```
+
+以调用接口的耗时统计功能为例，作一个TimeUsed Middlware。
+
+TimeUsedMiddleware的实现如下：
+
+```go
+func WithTimeUsed(next Endpoint) Endpoint {
+
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+
+		defer func(begin time.Time) {
+			log.Printf("time_used: %s", time.Since(begin))
+		}(time.Now())
+
+		return next(ctx, request)
+	}
+}
+```
+
+但是，上面有个问题，就是比如我们依赖其他的组件，比如我们依赖一个自定义的`log.Logger`组件，那么这种方式就不是太合适。
