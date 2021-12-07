@@ -28,6 +28,15 @@ func main() {
 		svr = &simpleStringServer{}
 	}
 
+	// add middleware, and enable request counter for metrics
+	{
+		counter := zykit.NewCounter(zykit.CounterOpts{
+			Name: "request_count",
+			Help: "Counter of request",
+		})
+		svr = &instrumentMiddleware{*counter, svr}
+	}
+
 	var upperEndpoint zykit.Endpoint
 	{
 		upperEndpoint = makeUpperEndpoint(svr)

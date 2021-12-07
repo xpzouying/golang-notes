@@ -219,3 +219,63 @@ promhttp_metric_handler_requests_total{code="200"} 2
 promhttp_metric_handler_requests_total{code="500"} 0
 promhttp_metric_handler_requests_total{code="503"} 0
 ```
+
+上面日志中，
+
+- `# HELP` 注释该指标的用途
+- `# TYPE` 说明该指标的类型
+
+
+接下来，我们对统计的数据进行丰富。增加`Prometheus`其他的信息，[示例](https://pkg.go.dev/github.com/prometheus/client_golang/prometheus#hdr-A_Basic_Example)。
+
+**增加接口调用次数**
+
+Prometheus中，提供了2个`Counter`：
+
+- [NewCounter](https://pkg.go.dev/github.com/prometheus/client_golang/prometheus#NewCounter) - 不带label。
+
+- [NewCounterVec](https://pkg.go.dev/github.com/prometheus/client_golang/prometheus#NewCounterVec) - 带有label。
+
+
+直接引入`prometheus.Counter`，增加简单接口计数。
+
+```go
+type CounterOpts = prometheus.CounterOpts
+
+type Counter struct {
+	core prometheus.Counter
+}
+
+func (c *Counter) Inc() {
+	c.core.Inc()
+}
+
+func NewCounter(opts CounterOpts) *Counter {
+
+	counter := prometheus.NewCounter(opts)
+
+	prometheus.MustRegister(counter)
+	return &Counter{counter}
+}
+```
+
+我们定义自己的`Counter`，只需要`Inc()`方法即可，里面就是调用prometheus自带的Counter的Inc方法。
+
+```go
+type instrumentMiddleware struct {
+	requestCounter zykit.Counter
+	svc StringService
+}
+
+func (mw *instrumentMiddleware) Upper(s string) string {
+	mw.requestCounter.Inc()
+	return mw.svc.Upper(s)
+}
+
+func (mw *instrumentMiddleware) Count(s string) int {
+	mw.requestCounter.Inc()
+	return mw.svc.Count(s)
+}
+```
+
+创造一个middleware - `instrumentMiddleware`，里面实现了Service interface的接口要求。
