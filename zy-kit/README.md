@@ -279,3 +279,36 @@ func (mw *instrumentMiddleware) Count(s string) int {
 ```
 
 创造一个middleware - `instrumentMiddleware`，里面实现了Service interface的接口要求。
+
+
+**运行**
+
+运行服务端：
+
+```bash
+cd 3-metrics
+
+go run .
+# 2021/12/08 13:44:07 listen on :8080
+```
+
+请求：
+
+```bash
+curl -XPOST -d '{"s": "ZouYing"}'  http://localhost:8080/count
+# 7
+
+curl -XPOST -d '{"s": "ZouYing"}'  http://localhost:8080/upper
+# "ZOUYING"
+```
+
+打开浏览器，[http://localhost:8080/metrics](http://localhost:8080/metrics)，
+查看自定义的统计：`request_count`。
+
+```
+# ...
+# ...
+# HELP request_count Counter of request
+# TYPE request_count counter
+request_count 2
+```
