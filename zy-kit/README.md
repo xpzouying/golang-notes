@@ -312,3 +312,8 @@ curl -XPOST -d '{"s": "ZouYing"}'  http://localhost:8080/upper
 # TYPE request_count counter
 request_count 2
 ```
+
+
+## 4-stringsvc-multiple-transport
+
+同时支持grpc和http协议。
