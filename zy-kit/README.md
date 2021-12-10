@@ -317,3 +317,11 @@ request_count 2
 ## 4-stringsvc-multiple-transport
 
 同时支持grpc和http协议。
+
+安装`proto`解析：
+
+```bash
+go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
+
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
+```
