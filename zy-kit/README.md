@@ -325,3 +325,18 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.26
 
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.1
 ```
+
+安装`protobuf`，Macos系统：
+
+```bash
+brew install protobuf
+```
+
+> 如果仍然找不到，可能是命令`protoc-gen-go`找不到。
+> 那么：`export PATH=$PATH:$HOME/go/bin`
+
+生成`pb.go`文件：
+
+```bash
+protoc --go_out=. ./svc.proto
+```

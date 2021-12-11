@@ -1,0 +1,18 @@
+
+syntax = "proto3";
+
+package pb;
+
+option go_package="example/pb";
+
+service Add {
+    rpc Upper (UpperRequest) returns (UpperResponse) {}
+}
+
+message UpperRequest {
+    string s = 1;
+}
+
+message UpperResponse {
+    string result = 1;
+}
