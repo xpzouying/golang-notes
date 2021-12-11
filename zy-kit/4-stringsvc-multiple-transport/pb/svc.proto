@@ -5,7 +5,7 @@ package pb;
 
 option go_package="example/pb";
 
-service Add {
+service String {
     rpc Upper (UpperRequest) returns (UpperResponse) {}
 }
 
