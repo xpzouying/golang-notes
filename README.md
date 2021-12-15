@@ -14,6 +14,15 @@
 
 - WAL的实现
 
+- 《Clean Architechture》读书笔记
+
+  - [《clean architecture》第一部分](https://mp.weixin.qq.com/s?__biz=MzI4NDM0MzIyMg==&mid=2247489322&idx=1&sn=84f956b3c50ea95a544dbd1355e3c266&scene=21#wechat_redirect)
+
+  - [Go工程化(一) 架构整洁之道阅读笔记](https://lailin.xyz/post/go-training-week4-clean-arch.html)
+
+    这个博客有不少可以参考的文章。
+
+- [Go 语言设计模式](https://github.com/senghoo/golang-design-pattern)
 
 ## 如何使用
 
