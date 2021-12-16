@@ -12,6 +12,10 @@
 
 - Raft的实现
 
+  - https://github.com/eliben/raft
+
+  - https://eli.thegreenplace.net/2020/implementing-raft-part-0-introduction/
+
 - WAL的实现
 
 - 《Clean Architechture》读书笔记
@@ -20,9 +24,14 @@
 
   - [Go工程化(一) 架构整洁之道阅读笔记](https://lailin.xyz/post/go-training-week4-clean-arch.html)
 
+  - [clean architecture(上)](https://xargin.com/clean-architecture-1/)
+
     这个博客有不少可以参考的文章。
 
 - [Go 语言设计模式](https://github.com/senghoo/golang-design-pattern)
+
+  - [深入设计模式](https://refactoringguru.cn/design-patterns/builder)
+
 
 ## 如何使用
 
