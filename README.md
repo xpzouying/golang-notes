@@ -32,6 +32,10 @@
 
   - [深入设计模式](https://refactoringguru.cn/design-patterns/builder)
 
+- 规范相关
+
+  - [Microsoft](https://github.com/microsoft/code-with-engineering-playbook/)
+
 
 ## 如何使用
 
