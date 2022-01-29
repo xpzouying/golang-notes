@@ -33,7 +33,7 @@ func NewMemSqlite() (*gorm.DB, error) {
 	)
 }
 
-func NewUserRepo(db *gorm.DB) (*User, error) {
+func NewUserRepo(db *gorm.DB) (*UserRepo, error) {
 
 	if db == nil {
 		return nil, errors.New("connection is nil")
