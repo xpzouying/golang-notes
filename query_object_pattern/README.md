@@ -75,6 +75,15 @@ go run cmd/main.go
 那么，如何写出更好的SQL查询？
 
 
+## DAY 2 - Query Object
+
+
+
+
 ## 参考资料
 
-- [Go 工程化(十一) 如何优雅的写出 repo 层代码](https://lailin.xyz/post/graceful-repo-code.html)
+- [Query Object - by Martin Fowler](https://www.martinfowler.com/eaaCatalog/queryObject.html) - 重构作者讲解Query Object模式
+
+- [Go 工程化(十一) 如何优雅的写出 repo 层代码](https://lailin.xyz/post/graceful-repo-code.html) - 这篇文章中使用的方式有个问题，就是`type DBOption func(*gorm.DB) *gorm.DB`依赖了具体的实现（即*gorm.DB），这样就使得我们没有办法将它放到`biz.UserUsecase`的接口中。
+
+- [QueryObject pattern with gorm and golang](https://patriktomik.medium.com/queryobject-pattern-with-gorm-and-golang-f72bce7cb09f) - 使用Chrome私密模式打开
