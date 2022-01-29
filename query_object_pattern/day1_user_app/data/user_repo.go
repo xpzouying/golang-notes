@@ -11,7 +11,7 @@ import (
 )
 
 type User struct {
-	ID   int
+	ID   int `gorm:"primaryKey"`
 	Name string
 	Age  uint8
 
