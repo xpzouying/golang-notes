@@ -37,6 +37,11 @@
   - [Microsoft](https://github.com/microsoft/code-with-engineering-playbook/)
 
 
+## 阅读推荐
+
+- [Go语言之父谈Go编程语言与环境](https://mp.weixin.qq.com/s?__biz=MzIyNzM0MDk0Mg==&mid=2247490227&idx=1&sn=620d9ab5f06c64852a141e43abf44fef&cur_album_id=1509674724665163776#wechat_redirect) - Rob Pike介绍Go的特性。
+
+
 ## 如何使用
 
 1. 打开[Issues](https://github.com/xpzouying/golang-notes/issues)可以查看所有的笔记。可以搜索相关问题，或使用`Labels`查看某类问题。
