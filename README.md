@@ -11,6 +11,8 @@
 
 - [2021年Go语言盘点：厉兵秣马强技能，蓄势待发新征程](https://tonybai.com/2022/01/16/the-2021-review-of-go-programming-language/) - 汇总Go 2021年事件盘点。在今年发布了2个版本：Go1.16、Go1.17，另外还发布了Go1.18 beta版本，在这里尝试加入泛型的技术方案。在2022年，泛型将被正式加入到Go中，从[Go语言之父谈Go编程语言与环境](https://mp.weixin.qq.com/s?__biz=MzIyNzM0MDk0Mg==&mid=2247490227&idx=1&sn=620d9ab5f06c64852a141e43abf44fef&cur_album_id=1509674724665163776#wechat_redirect) 的文章中可以看到，对于泛型加入后的社区反映，`Rob Pike`也不确定反响如何，让我们2022年拭目以待。
 
+- [MySQL 游标分页与传统分页](https://github.com/x1ah/Blog/issues/15) - 业务开发中，经常会遇到的分页问题。推荐用游标分页的方式，而不是`offset+limit`的方式。
+
 
 ## 记录
 
