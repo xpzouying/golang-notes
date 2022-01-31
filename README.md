@@ -2,6 +2,15 @@
 
 这里记录着我的Golang笔记和思考。
 
+另外，[Go常见的错误汇总](./CommonError.md)汇总常见的错误问题。
+
+
+# Reading List
+
+- [Go语言之父谈Go编程语言与环境](https://mp.weixin.qq.com/s?__biz=MzIyNzM0MDk0Mg==&mid=2247490227&idx=1&sn=620d9ab5f06c64852a141e43abf44fef&cur_album_id=1509674724665163776#wechat_redirect) - Rob Pike介绍Go的特性。这篇文章可以看到Go语言与其他语言的区别所在。
+
+- [2021年Go语言盘点：厉兵秣马强技能，蓄势待发新征程](https://tonybai.com/2022/01/16/the-2021-review-of-go-programming-language/) - 汇总Go 2021年事件盘点。在今年发布了2个版本：Go1.16、Go1.17，另外还发布了Go1.18 beta版本，在这里尝试加入泛型的技术方案。在2022年，泛型将被正式加入到Go中，从[Go语言之父谈Go编程语言与环境](https://mp.weixin.qq.com/s?__biz=MzIyNzM0MDk0Mg==&mid=2247490227&idx=1&sn=620d9ab5f06c64852a141e43abf44fef&cur_album_id=1509674724665163776#wechat_redirect) 的文章中可以看到，对于泛型加入后的社区反映，`Rob Pike`也不确定反响如何，让我们2022年拭目以待。
+
 
 ## 记录
 
@@ -35,11 +44,6 @@
 - 规范相关
 
   - [Microsoft](https://github.com/microsoft/code-with-engineering-playbook/)
-
-
-## 阅读推荐
-
-- [Go语言之父谈Go编程语言与环境](https://mp.weixin.qq.com/s?__biz=MzIyNzM0MDk0Mg==&mid=2247490227&idx=1&sn=620d9ab5f06c64852a141e43abf44fef&cur_album_id=1509674724665163776#wechat_redirect) - Rob Pike介绍Go的特性。
 
 
 ## 如何使用
