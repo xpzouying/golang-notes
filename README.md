@@ -14,6 +14,8 @@
 
 -   [DDD 的学习书单](https://zhuanlan.zhihu.com/p/138884686) - 推荐了 2 本 Martin Flowler 的另外 2 本书：《企业应用架构模式》 & 《分析模式》。
 
+-   [你也能写个 Shadowsocks](https://github.com/gwuhaolin/blog/issues/12) - 介绍制作Proxy的原理。
+
 ## 记录
 
 -   [HTTP 服务如何优雅退出和重启](./graceful_shutdown_and_restart/README.md)
