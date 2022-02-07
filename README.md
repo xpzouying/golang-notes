@@ -20,6 +20,13 @@
 
 -   [HTTP 服务如何优雅退出和重启](./graceful_shutdown_and_restart/README.md)
 
+-   读书：[《代码整洁之道》](https://book.douban.com/subject/34986245/)
+
+-   读书：[《代码整洁之道 - 程序员的职业素养》](https://book.douban.com/subject/26919457/)
+
+-   读书：[《架构整洁之道》](https://book.douban.com/subject/30333919/)
+
+
 ## Todos
 
 -   Raft 的实现
