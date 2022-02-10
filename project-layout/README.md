@@ -84,7 +84,7 @@
 
         1.  **参数转换**，并做简单的参数校验；
         2.  这里面只做编排，不做任何业务逻辑。
-        3.  做业务数据的渲染； ( 由于没有 BFF，所以将 BFF 的功能放到这一层做，但是会导致这一层的代码膨胀 ) （ *这个能力暂时存疑。* ）
+        3.  做业务数据的渲染； ( 由于没有 BFF，所以将 BFF 的功能放到这一层做，但是会导致这一层的代码膨胀 ) ( *这个能力暂时存疑。* )
 
         -   代码示例
 
@@ -163,6 +163,8 @@
   -   [Clean Architecture, 2 years later](https://eltonminetto.dev/en/post/2020-07-06-clean-architecture-2years-later/)
 
   -   [The Clean Architecture](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html) - Bob 大叔的整洁架构的文章。这篇文章也包含在《架构整洁之道》中。
+
+  -   [Domain Driven Design: Domain Service, Application Service](https://stackoverflow.com/questions/2268699/domain-driven-design-domain-service-application-service)
 
 1.  Bob 大叔的 - [《代码整洁之道》](https://book.douban.com/subject/4199741/) ， [《架构整洁之道》](https://book.douban.com/subject/30333919/) 。
 
