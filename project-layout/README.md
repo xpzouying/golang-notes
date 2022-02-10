@@ -78,7 +78,7 @@
 
     -   `/service`
 
-        **调用关系：**service —> biz 中的 Usercase。
+        **调用关系：** service —> biz 中的 Usercase。
 
         **职责：**
 
