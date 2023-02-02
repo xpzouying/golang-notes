@@ -24,3 +24,5 @@ pythonenv*
 
 # zouying
 **/prometheus/prometheus.yml
+
+node_modules/
