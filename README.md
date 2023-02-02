@@ -4,6 +4,12 @@
 
 另外， [Go 常见的错误汇总](./CommonError.md) 汇总常见的错误问题。
 
+
+# List Table
+
+- [Go 打包前端代码的示例](./go_embed_front_source/) - 使用 Go embed 特性直接在二进制中打包发布前端服务的示例。
+
+
 # Reading List
 
 -   [Go 语言之父谈 Go 编程语言与环境](https://mp.weixin.qq.com/s?__biz=MzIyNzM0MDk0Mg==&mid=2247490227&idx=1&sn=620d9ab5f06c64852a141e43abf44fef&cur_album_id=1509674724665163776#wechat_redirect) - Rob Pike 介绍 Go 的特性。这篇文章可以看到 Go 语言与其他语言的区别所在。
